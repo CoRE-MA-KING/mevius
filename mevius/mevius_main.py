@@ -77,6 +77,8 @@ class RobotCommand:
 ################ function ##################
 
 def command_callback(command, robot_state, robot_command):
+    print("command_callback")
+    print([command, robot_state, robot_command])
     with robot_command.lock:
         prev_command = robot_command.command
         if not robot_command.initialized:
@@ -162,7 +164,9 @@ def realsense_acc_callback(msg, params):
         # for realsenes arrangement
         peripherals_state.body_acc = [msg.linear_acceleration.z, msg.linear_acceleration.x, msg.linear_acceleration.y]
 
+'''
 def virtual_joy_callback(msg, params):
+    print("joy")
     peripherals_state = params
     with peripherals_state.lock:
         peripherals_state.virtual_enable = True
@@ -174,7 +178,7 @@ def virtual_joy_callback(msg, params):
         command_callback("STANDBY-STANDUP", robot_state, robot_command)
     elif two_pushed == 1:
         command_callback("STANDUP-WALK", robot_state, robot_command)
-
+'''
 def spacenav_joy_callback(msg, params):
     peripherals_state = params
     with peripherals_state.lock:
@@ -300,6 +304,35 @@ def can_communication(robot_state, robot_command, peripherals_state):
             # end_time = time.time()
             # print(end_time-start_time)
 
+class KeyboardJoy(Node):
+    def __init__(self,robot_state, robot_command, peripheral_state):
+        super().__init__("key_joy_node")
+        self.robot_state=robot_state
+        self.robot_command=robot_command
+        self.peripheral_state=peripheral_state
+        self.subscription = self.create_subscription(
+            Joy,
+            '/joy',
+            partial(self.virtual_joy_callback, params =(self.peripheral_state)),
+            1
+        )
+        self.subscription
+    
+    def virtual_joy_callback(self, msg, params):
+        peripherals_state = params
+        print(msg)
+        with peripherals_state.lock:
+            peripherals_state.virtual_enable = True
+            peripherals_state.virtual = [msg.axes[0], msg.axes[1], msg.buttons[0], msg.buttons[1]]
+            one_pushed = peripherals_state.virtual[2]
+            two_pushed = peripherals_state.virtual[3]
+
+        if one_pushed == 1:
+            command_callback("STANDBY-STANDUP", self.robot_state, self.robot_command)
+        elif two_pushed == 1:
+            command_callback("STANDUP-WALK", self.robot_state, self.robot_command)
+
+
 class MeviusLogPub(Node):
     def __init__(self):
         super().__init__("mevius_log")
@@ -364,14 +397,13 @@ class SimCommunication(Node):
             self.robot_command.remaining_time = self.robot_command.interpolating_time
             self.robot_command.initialized = True
 
-        self.mujoco_Hz=2
+        self.mujoco_Hz=1/200
         self.timer=self.create_timer(self.mujoco_Hz,self.timer_callback)
         #rate = self.create_rate(200) # mujoco hz
 
     def timer_callback(self):
         if self.viewer.is_alive:
             pass
-        print("mojoco callback")
 
         self.viewer.cam.type = mujoco.mjtCamera.mjCAMERA_TRACKING
         self.viewer.cam.trackbodyid = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "base_link")
@@ -385,7 +417,6 @@ class SimCommunication(Node):
         
         jointstate_msg = JointState()
         jointstate_msg.header.stamp = builtin_time
-        print(jointstate_msg.header.stamp)
 
         with self.robot_command.lock:
             ref_angle = self.robot_command.angle[:]
@@ -467,7 +498,42 @@ class SimCommunication(Node):
 
         self.viewer.render()
 
-        
+class CameraOdom(Node):
+     def __init__(self,peripheral_state):
+        super().__init__("odom")
+
+        self.subscription = self.create_subscription(
+            Odometry,
+            '/camera/odom/sample',
+            partial(realsense_vel_callback, params =(peripheral_state)),
+            1
+        )
+        self.subscription    
+
+class CameraGyro(Node):
+     def __init__(self,peripheral_state):
+        super().__init__("gyro")
+
+        self.subscription = self.create_subscription(
+            Imu,
+            "camera/gyro/sample",
+            partial(realsense_gyro_callback, params =(peripheral_state)),
+            1
+        )
+        self.subscription    
+
+class CameraAccel(Node):
+     def __init__(self,robperipheral_state):
+        super().__init__("accel")
+
+        self.subscription = self.create_subscription(
+            Imu,
+            "camera/accel/sample",
+            partial(realsense_acc_callback, params =(peripheral_state)),
+            1
+        )
+        self.subscription    
+
 
 class MeviusCommand(Node):
     def __init__(self,robot_state,robot_command):
@@ -616,7 +682,8 @@ class Mevius(Node):
         self.timer=self.create_timer(1,self.timer_callback)
 
     def timer_callback(self):
-        print("mevius callback!")        
+        pass
+        #print("mevius callback!")        
 
 def main():
     import sys
@@ -639,6 +706,8 @@ def main():
 
         mevius_command=MeviusCommand(robot_state,robot_command)
 
+        keyboard_joy=KeyboardJoy(robot_state, robot_command,peripheral_state)
+
         #if 1:
         sim_communication_thread=SimCommunication(robot_state, robot_command,peripheral_state)
         
@@ -646,6 +715,7 @@ def main():
         executor.add_node(sim_communication_thread)
         executor.add_node(mevius)
         executor.add_node(mevius_command)
+        executor.add_node(keyboard_joy)
 
         try:
             executor.spin()
