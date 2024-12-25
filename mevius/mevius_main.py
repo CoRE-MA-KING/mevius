@@ -7,8 +7,6 @@ import threading
 import numpy as np
 from functools import partial
 
-
-
 import rclpy
 from rclpy.node import Node
 from rclpy.executors import SingleThreadedExecutor
@@ -18,7 +16,7 @@ from std_msgs.msg import String, Float32MultiArray
 from sensor_msgs.msg import Imu, Joy, JointState
 from nav_msgs.msg import Odometry
 from .tmotor_lib import CanMotorController
-from .msg._mevius_log import MeviusLog
+from .msg import MeviusLog
 from .mevius_utils import *
 from .mevius_utils.parameters import parameters as P
 
@@ -548,7 +546,7 @@ class CameraAccel(Node):
         self.subscription = self.create_subscription(
             Imu,
             "camera/accel/sample",
-            partial(realsense_acc_callback, params =(peripheral_state)),
+            partial(realsense_acc_callback, params =(self.peripheral_state)),
             1
         )
         self.subscription    
@@ -587,112 +585,113 @@ class MainController(Node):
     def __init__(self,robot_state, robot_command, peripherals_state):
         super().__init__("main_controller")
         print("Init main_controller Node")
-        self.timer=self.create_timer(P.CONTROL_HZ,self.timer_callback)
+        self.controlrate = 200.0
+        self.timer=self.create_timer(1.0/self.controlrate,self.timer_callback)
         self.robot_state=robot_state
         self.robot_command=robot_command
         self.peripherals_state=peripherals_state
+        policy_path = os.path.join(os.path.dirname(__file__), "models/policy.pt")
+        self.policy = mevius_utils.read_torch_policy(policy_path).to("cpu")
+
+        urdf_fullpath = os.path.join(os.path.dirname(__file__), "models/mevius.urdf")
+        self.joint_params = mevius_utils.get_urdf_joint_params(urdf_fullpath, P.JOINT_NAME)
+
+        self.is_safe = True
+        self.last_actions = [0.0] * 12 # TODO initialize
 
     def timer_callback(self):
-        policy_path = os.path.join(os.path.dirname(__file__), "../models/policy.pt")
-        policy = mevius_utils.read_torch_policy(policy_path).to("cpu")
+        # rate = rospy.Rate(P.CONTROL_HZ)
+        # while rclpy.ok():
+        with self.robot_command.lock:
+            command = self.robot_command.command
+        if command in ["STANDBY", "STANDUP", "DEBUG"]:
+            print(self.robot_command.remaining_time)
+            with self.robot_command.lock:
+                self.robot_command.remaining_time -= 1.0/self.controlrate
+                self.robot_command.remaining_time = max(0, self.robot_command.remaining_time)
+                if self.robot_command.remaining_time <= 0:
+                    pass
+                else:
+                    ratio = 1 - self.robot_command.remaining_time / self.robot_command.interpolating_time
+                    self.robot_command.angle = [a + (b-a)*ratio for a, b in zip(self.robot_command.initial_angle, self.robot_command.final_angle)]
+        elif command in ["WALK"]:
+            with self.robot_command.lock:
+                self.robot_command.remaining_time -= 1.0/self.controlrate
+                self.robot_command.remaining_time = max(0, self.robot_command.remaining_time)
 
-        urdf_fullpath = os.path.join(os.path.dirname(__file__), "../models/mevius.urdf")
-        joint_params = mevius_utils.get_urdf_joint_params(urdf_fullpath, P.JOINT_NAME)
+            with self.peripherals_state.lock:
+                base_quat = self.peripherals_state.body_quat[:]
+                base_lin_vel = self.peripherals_state.body_vel[:]
+                base_ang_vel = self.peripherals_state.body_gyro[:]
 
-        is_safe = True
-        last_actions = [0.0] * 12 # TODO initialize
+                ranges = P.commands.ranges
+                coefs = [ranges.lin_vel_x[1], ranges.lin_vel_y[1], ranges.ang_vel_yaw[1], ranges.heading[1]]
+                if self.peripherals_state.spacenav_enable:
+                    nav = self.peripherals_state.spacenav[:]
+                    max_command = 0.6835
+                    commands_ = [nav[0], nav[1], nav[5], nav[5]]
+                    commands = [[min(max(-coef, coef * command / max_command), coef) for coef, command in zip(coefs, commands_)]]
+                elif self.peripherals_state.virtual_enable:
+                    nav = self.peripherals_state.virtual[:]
+                    max_command = 1.0
+                    commands_ = [nav[1], nav[0], 0, 0]
+                    commands = [[min(max(-coef, coef * command / max_command), coef) for coef, command in zip(coefs, commands_)]]
+                else:
+                    commands = torch.tensor([[0.0, 0.0, 0.0, 0.0]], dtype=torch.float, requires_grad=False)
 
-        rate = rospy.Rate(P.CONTROL_HZ)
-        while not rospy.is_shutdown():
-            with robot_command.lock:
-                command = robot_command.command
-            if command in ["STANDBY", "STANDUP", "DEBUG"]:
-                with robot_command.lock:
-                    robot_command.remaining_time -= 1.0/P.CONTROL_HZ
-                    robot_command.remaining_time = max(0, robot_command.remaining_time)
-                    if robot_command.remaining_time <= 0:
-                        pass
-                    else:
-                        ratio = 1 - robot_command.remaining_time / robot_command.interpolating_time
-                        robot_command.angle = [a + (b-a)*ratio for a, b in zip(robot_command.initial_angle, robot_command.final_angle)]
-            elif command in ["WALK"]:
-                with robot_command.lock:
-                    robot_command.remaining_time -= 1.0/P.CONTROL_HZ
-                    robot_command.remaining_time = max(0, robot_command.remaining_time)
+        # for safety
+        if command in ["WALK"]:
+            # no realsense
+            with self.peripherals_state.lock:
+                if self.peripherals_state.realsense_last_time is None:
+                    self.is_safe = False
+                    print("No Connection to Realsense. PD gains become 0.")
+                if (self.peripherals_state.realsense_last_time is not None) and (time.time() - self.peripherals_state.realsense_last_time > 0.1):
+                    print("Realsense data is too old. PD gains become 0.")
+                    self.is_safe = False
+            # falling down
+            if self.is_safe and (Rotation.from_quat(base_quat).as_matrix()[2, 2] < 0.6):
+                self.is_safe = False
+                print("Robot is almost fell down. PD gains become 0.")
 
-                with peripherals_state.lock:
-                    base_quat = peripherals_state.body_quat[:]
-                    base_lin_vel = peripherals_state.body_vel[:]
-                    base_ang_vel = peripherals_state.body_gyro[:]
-
-                    ranges = P.commands.ranges
-                    coefs = [ranges.lin_vel_x[1], ranges.lin_vel_y[1], ranges.ang_vel_yaw[1], ranges.heading[1]]
-                    if peripherals_state.spacenav_enable:
-                        nav = peripherals_state.spacenav[:]
-                        max_command = 0.6835
-                        commands_ = [nav[0], nav[1], nav[5], nav[5]]
-                        commands = [[min(max(-coef, coef * command / max_command), coef) for coef, command in zip(coefs, commands_)]]
-                    elif peripherals_state.virtual_enable:
-                        nav = peripherals_state.virtual[:]
-                        max_command = 1.0
-                        commands_ = [nav[1], nav[0], 0, 0]
-                        commands = [[min(max(-coef, coef * command / max_command), coef) for coef, command in zip(coefs, commands_)]]
-                    else:
-                        commands = torch.tensor([[0.0, 0.0, 0.0, 0.0]], dtype=torch.float, requires_grad=False)
-
-            # for safety
-            if command in ["WALK"]:
-                # no realsense
-                with peripherals_state.lock:
-                    if peripherals_state.realsense_last_time is None:
-                        is_safe = False
-                        print("No Connection to Realsense. PD gains become 0.")
-                    if (peripherals_state.realsense_last_time is not None) and (time.time() - peripherals_state.realsense_last_time > 0.1):
-                        print("Realsense data is too old. PD gains become 0.")
-                        is_safe = False
-                # falling down
-                if is_safe and (Rotation.from_quat(base_quat).as_matrix()[2, 2] < 0.6):
-                    is_safe = False
-                    print("Robot is almost fell down. PD gains become 0.")
-
-                if not is_safe:
-                    print("Robot is not safe. Please reboot the robot.")
-                    with robot_command.lock:
-                        robot_command.kp = [0.0] * 12
-                        robot_command.kd = [0.0] * 12
-                        with robot_state.lock:
-                            robot_command.angle = robot_state.angle[:]
-                    rate.sleep()
-                    continue
+            if not self.is_safe:
+                print("Robot is not safe. Please reboot the robot.")
+                with self.robot_command.lock:
+                    self.robot_command.kp = [0.0] * 12
+                    self.robot_command.kd = [0.0] * 12
+                    with self.robot_state.lock:
+                        self.robot_command.angle = self.robot_state.angle[:]
+                # rate.sleep()
+                # continue
 
 
-            if command in ["WALK"]:
-                with robot_state.lock:
-                    dof_pos = robot_state.angle[:]
-                    dof_vel = robot_state.velocity[:]
-                # print(base_quat, base_lin_vel, base_ang_vel, commands, dof_pos, dof_vel, last_actions)
-                obs = mevius_utils.get_policy_observation(base_quat, base_lin_vel, base_ang_vel, commands, dof_pos, dof_vel, last_actions)
-                actions = mevius_utils.get_policy_output(policy, obs)
-                scaled_actions = P.control.action_scale * actions
+        if command in ["WALK"]:
+            with self.robot_state.lock:
+                dof_pos = self.robot_state.angle[:]
+                dof_vel = self.robot_state.velocity[:]
+            # print(base_quat, base_lin_vel, base_ang_vel, commands, dof_pos, dof_vel, last_actions)
+            obs = mevius_utils.get_policy_observation(base_quat, base_lin_vel, base_ang_vel, commands, dof_pos, dof_vel, self.last_actions)
+            actions = mevius_utils.get_policy_output(self.policy, obs)
+            scaled_actions = P.control.action_scale * actions
 
-            if command in ["WALK"]:
-                ref_angle = [a + b for a, b in zip(scaled_actions, P.DEFAULT_ANGLE[:])]
-                with robot_state.lock:
-                    for i in range(len(ref_angle)):
-                        if robot_state.angle[i]  < joint_params[i][0] or robot_state.angle[i] > joint_params[i][1]:
-                            ref_angle[i] = max(joint_params[i][0]+0.1, min(ref_angle[i], joint_params[i][1]-0.1))
-                            print("# Joint {} out of range: {:.3f}".format(P.JOINT_NAME[i], robot_state.angle[i]))
-                with robot_command.lock:
-                    robot_command.angle = ref_angle
+        if command in ["WALK"]:
+            ref_angle = [a + b for a, b in zip(scaled_actions, P.DEFAULT_ANGLE[:])]
+            with self.robot_state.lock:
+                for i in range(len(ref_angle)):
+                    if self.robot_state.angle[i]  < self.joint_params[i][0] or self.robot_state.angle[i] > self.joint_params[i][1]:
+                        ref_angle[i] = max(self.joint_params[i][0]+0.1, min(ref_angle[i], self.joint_params[i][1]-0.1))
+                        print("# Joint {} out of range: {:.3f}".format(P.JOINT_NAME[i], self.robot_state.angle[i]))
+            with self.robot_command.lock:
+                self.robot_command.angle = ref_angle
 
-                last_actions = actions[:]
-            # with peripherals_state.lock:
-            #     print("Body Velocity: {}".format(peripherals_state.body_vel))
-            #     print("Body Gyro: {}".format(peripherals_state.body_gyro))
-            #     print("Body Acc: {}".format(peripherals_state.body_acc))
+            self.last_actions = actions[:]
+        # with self.peripherals_state.lock:
+        #     print("Body Velocity: {}".format(self.peripherals_state.body_vel))
+        #     print("Body Gyro: {}".format(self.peripherals_state.body_gyro))
+        #     print("Body Acc: {}".format(self.peripherals_state.body_acc))
 
-            rate.sleep()
-            # time.sleep(1)
+        # rate.sleep()
+        # time.sleep(1)
 
 class Mevius(Node):
     def __init__(self):
@@ -737,6 +736,7 @@ def main():
         executor.add_node(mevius)
         executor.add_node(mevius_command)
         executor.add_node(keyboard_joy)
+        executor.add_node(main_controller)
 
         try:
             executor.spin()
@@ -745,8 +745,8 @@ def main():
             mevius.destroy_node()
             mevius_command.destroy_node()
 
-    except KeyboardInterrupt:
-        sys.exit(1)
+    # except KeyboardInterrupt:
+    #     sys.exit(1)
     finally:
         rclpy.try_shutdown()
     
