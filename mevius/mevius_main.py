@@ -395,7 +395,7 @@ class SimCommunication(Node):
             self.robot_command.remaining_time = self.robot_command.interpolating_time
             self.robot_command.initialized = True
 
-        self.mujoco_Hz=1/200
+        self.mujoco_Hz=1/50
         self.timer=self.create_timer(self.mujoco_Hz,self.timer_callback)
         #rate = self.create_rate(200) # mujoco hz
 
@@ -566,7 +566,7 @@ class MainController(Node):
     def __init__(self,robot_state, robot_command, peripherals_state):
         super().__init__("main_controller")
         print("Init main_controller Node")
-        self.controlrate = 200.0
+        self.controlrate = 50.0
         self.timer=self.create_timer(1.0/self.controlrate,self.timer_callback)
         self.robot_state=robot_state
         self.robot_command=robot_command
@@ -579,6 +579,7 @@ class MainController(Node):
 
         self.is_safe = True
         self.last_actions = [0.0] * 12 # TODO initialize
+        
 
     def timer_callback(self):
         # rate = rospy.Rate(P.CONTROL_HZ)
@@ -586,7 +587,6 @@ class MainController(Node):
         with self.robot_command.lock:
             command = self.robot_command.command
         if command in ["STANDBY", "STANDUP", "DEBUG"]:
-            print(self.robot_command.remaining_time)
             with self.robot_command.lock:
                 self.robot_command.remaining_time -= 1.0/self.controlrate
                 self.robot_command.remaining_time = max(0, self.robot_command.remaining_time)
@@ -724,8 +724,8 @@ def main():
             mevius.destroy_node()
             mevius_command.destroy_node()
 
-    # except KeyboardInterrupt:
-    #     sys.exit(1)
+    except KeyboardInterrupt:
+        sys.exit(1)
     finally:
         rclpy.try_shutdown()
     
