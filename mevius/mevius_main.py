@@ -16,7 +16,8 @@ from std_msgs.msg import String, Float32MultiArray
 from sensor_msgs.msg import Imu, Joy, JointState
 from nav_msgs.msg import Odometry
 from .tmotor_lib import CanMotorController
-from .msg import MeviusLog
+from mevius.msg._mevius_log import MeviusLog
+#from .msg import MeviusLog
 from .mevius_utils import *
 from .mevius_utils.parameters import parameters as P
 
@@ -244,10 +245,9 @@ class CanCommunication(Node):
 
     def timer_callback(self):
         msg = MeviusLog()
-        msg.header.stamp = self.get_clock().now()
-
+        msg.header.stamp = Time()
         jointstate_msg = JointState()
-        jointstate_msg.header.stamp = self.get_clock().now()
+        jointstate_msg.header.stamp = Time()
 
         with self.robot_command.lock:
             ref_angle = self.robot_command.angle[:]
@@ -283,7 +283,7 @@ class CanCommunication(Node):
         jointstate_msg.position = pos_list
         jointstate_msg.velocity = vel_list
         jointstate_msg.effort = cur_list
-        self.jointstate_pub.publish(jointstate_msg)
+        self.jointstate_pub.pub.publish(jointstate_msg)
 
         msg.angle = pos_list
         msg.velocity = vel_list
@@ -303,7 +303,7 @@ class CanCommunication(Node):
         msg.ref_kd = ref_kd
         msg.ref_torque = ref_torque
 
-        self.state_pub.publish(msg)
+        self.state_pub.pub.publish(msg)
 
 
 def can_communication():
@@ -726,7 +726,7 @@ def main():
 
         keyboard_joy=KeyboardJoy(robot_state, robot_command,peripheral_state)
 
-        if 1:
+        if 0:
             communication_thread=SimCommunication(robot_state, robot_command,peripheral_state)
         else:
             communication_thread=CanCommunication(robot_state, robot_command,peripheral_state)
