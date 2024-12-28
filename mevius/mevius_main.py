@@ -192,101 +192,111 @@ def spacenav_joy_callback(msg, params):
     elif right_pushed == 1:
         command_callback("STANDUP-WALK", robot_state, robot_command)
 
-def can_communication(robot_state, robot_command, peripherals_state):
-    device = "can0"
-    motor_type = "AK70_10_V1p1"
-    n_motor = 12
-    motors = [None]*n_motor
-    for i in range(n_motor):
-        motors[i] = CanMotorController("can0", P.CAN_ID[i], motor_type=motor_type, motor_dir=P.MOTOR_DIR[i])
+class CanCommunication(Node):
+    def __init__(self,robot_state, robot_command, peripherals_state):
+        super().__init__("can_communication")
+        self.robot_state=robot_state
+        self.robot_command=robot_command
+        self.peripherals_state=peripherals_state
 
-    print("Enabling Motors...")
-    for i, motor in enumerate(motors):
-        pos, vel, cur, tem = motor.enable_motor()
-        print("Enabling Motor {} [Status] Pos: {:.3f}, Vel: {:.3f}, Cur: {:.3f}, Temp: {:.3f}".format(P.JOINT_NAME[i], pos, vel, cur, tem))
-        with robot_state.lock:
-            robot_state.angle[i] = pos
-            robot_state.velocity[i] = vel
-            robot_state.current[i] = cur
-            robot_state.temperature[i] = tem
+        print("Init can node")
 
-    state_pub = rospy.Publisher("mevius_log", MeviusLog, queue_size=2)
-    jointstate_pub = rospy.Publisher("joint_states", JointState, queue_size=2)
+        self.device = "can0"
+        self.motor_type = "AK70_10_V1p1"
+        self.n_motor = 12
+        self.motors = [None]*self.n_motor
+        for i in range(self.n_motor):
+            self.motors[i] = CanMotorController(self.device, P.CAN_ID[i], motor_type=self.motor_type, motor_dir=P.MOTOR_DIR[i])
+        
+        print("Enabling Motors...")
+        for i, motor in enumerate(self.motors):
+            pos, vel, cur, tem = motor.enable_motor()
+            print("Enabling Motor {} [Status] Pos: {:.3f}, Vel: {:.3f}, Cur: {:.3f}, Temp: {:.3f}".format(P.JOINT_NAME[i], pos, vel, cur, tem))
+            with self.robot_state.lock:
+                self.robot_state.angle[i] = pos
+                self.robot_state.velocity[i] = vel
+                self.robot_state.current[i] = cur
+                self.robot_state.temperature[i] = tem
+        print("Finish enabling motors!")
+        self.state_pub = MeviusLogPub()
+        self.jointstate_pub = JointStatePub()
+        #state_pub = rospy.Publisher("mevius_log", MeviusLog, queue_size=2)
+        #jointstate_pub = rospy.Publisher("joint_states", JointState, queue_size=2)
 
-    print("Setting Initial Offset...")
-    for i, motor in enumerate(motors):
-        motor.set_angle_offset(P.STANDBY_ANGLE[i], deg=False)
-        # motor.set_angle_range(joint_params[i][0], joint_params[i][1], deg=False)
+        print("Setting Initial Offset...")
+        for i, motor in enumerate(self.motors):
+            motor.set_angle_offset(P.STANDBY_ANGLE[i], deg=False)
+            # motor.set_angle_range(joint_params[i][0], joint_params[i][1], deg=False)
 
-    with robot_state.lock:
-        robot_state.angle = P.STANDBY_ANGLE[:]
+        with self.robot_state.lock:
+            self.robot_state.angle = P.STANDBY_ANGLE[:]
 
-    with robot_command.lock:
-        robot_command.command = "STANDBY"
-        robot_command.angle = P.STANDBY_ANGLE[:]
-        robot_command.initial_angle = P.STANDBY_ANGLE[:]
-        robot_command.final_angle = P.STANDBY_ANGLE[:]
-        robot_command.interpolating_time = 3.0
-        robot_command.remaining_time = robot_command.interpolating_time
-        robot_command.initialized = True
+        with self.robot_command.lock:
+            self.robot_command.command = "STANDBY"
+            self.robot_command.angle = P.STANDBY_ANGLE[:]
+            self.robot_command.initial_angle = P.STANDBY_ANGLE[:]
+            self.robot_command.final_angle = P.STANDBY_ANGLE[:]
+            self.robot_command.interpolating_time = 3.0
+            self.robot_command.remaining_time = self.robot_command.interpolating_time
+            self.robot_command.initialized = True
+    
+        self.error_count = [0]*self.n_motor
 
-    rate = rospy.Rate(P.CAN_HZ)
+        self.timer=self.create_timer(1/P.CAN_HZ,self.timer_callback)
 
-    error_count = [0]*12
-    while not rospy.is_shutdown():
-        start_time = time.time()
+    def timer_callback(self):
         msg = MeviusLog()
-        msg.header.stamp = rospy.Time.now()
+        msg.header.stamp = self.get_clock().now()
 
         jointstate_msg = JointState()
-        jointstate_msg.header.stamp = rospy.Time.now()
+        jointstate_msg.header.stamp = self.get_clock().now()
 
-        with robot_command.lock:
-            ref_angle = robot_command.angle[:]
-            ref_velocity = robot_command.velocity[:]
-            ref_kp = robot_command.kp[:]
-            ref_kd = robot_command.kd[:]
-            ref_torque = robot_command.torque[:]
+        with self.robot_command.lock:
+            ref_angle = self.robot_command.angle[:]
+            ref_velocity = self.robot_command.velocity[:]
+            ref_kp = self.robot_command.kp[:]
+            ref_kd = self.robot_command.kd[:]
+            ref_torque = self.robot_command.torque[:]
+        print(ref_angle[:])
 
-        n_motor = 12
-        pos_list = [0]*n_motor
-        vel_list = [0]*n_motor
-        cur_list = [0]*n_motor
-        tem_list = [0]*n_motor
-        for i, motor in enumerate(motors):
+        pos_list = [0]*self.n_motor
+        vel_list = [0]*self.n_motor
+        cur_list = [0]*self.n_motor
+        tem_list = [0]*self.n_motor
+        for i, motor in enumerate(self.motors):
             try:
                 pos, vel, cur, tem = motor.send_rad_command(ref_angle[i], ref_velocity[i], ref_kp[i], ref_kd[i], ref_torque[i])
             except:
-                error_count[i] += 1
-                print("# Can Reciver is Failed for {}, ({})".format(P.JOINT_NAME[i], error_count[i]))
+                self.error_count[i] += 1
+                print("# Can Reciver is Failed for {}, ({})".format(P.JOINT_NAME[i], self.error_count[i]))
                 continue
             pos_list[i] = pos
             vel_list[i] = vel
             cur_list[i] = cur
             tem_list[i] = tem
 
-        with robot_state.lock:
-            robot_state.angle = pos_list
-            robot_state.velocity = vel_list
-            robot_state.current = cur_list
-            robot_state.temperature = tem_list
+        with self.robot_state.lock:
+            self.robot_state.angle = pos_list
+            self.robot_state.velocity = vel_list
+            self.robot_state.current = cur_list
+            self.robot_state.temperature = tem_list
 
         jointstate_msg.name = P.JOINT_NAME
         jointstate_msg.position = pos_list
         jointstate_msg.velocity = vel_list
         jointstate_msg.effort = cur_list
-        jointstate_pub.publish(jointstate_msg)
+        self.jointstate_pub.publish(jointstate_msg)
 
         msg.angle = pos_list
         msg.velocity = vel_list
         msg.current = cur_list
         msg.temperature = tem_list
 
-        with peripherals_state.lock:
-            msg.body_vel = peripherals_state.body_vel[:]
-            msg.body_quat = peripherals_state.body_quat[:]
-            msg.body_gyro = peripherals_state.body_gyro[:]
-            msg.body_acc = peripherals_state.body_acc[:]
+        with self.peripherals_state.lock:
+            msg.body_vel = self.peripherals_state.body_vel[:]
+            msg.body_quat = self.peripherals_state.body_quat[:]
+            msg.body_gyro = self.peripherals_state.body_gyro[:]
+            msg.body_acc = self.peripherals_state.body_acc[:]
 
 
         msg.ref_angle = ref_angle
@@ -295,7 +305,16 @@ def can_communication(robot_state, robot_command, peripherals_state):
         msg.ref_kd = ref_kd
         msg.ref_torque = ref_torque
 
-        state_pub.publish(msg)
+        self.state_pub.publish(msg)
+
+
+def can_communication():
+
+
+    rate = rospy.Rate(P.CAN_HZ)
+
+    while not rospy.is_shutdown():
+        #たぶんいらない start_time = time.time()
 
         # rate.sleep()
         end_time = time.time()
@@ -708,11 +727,13 @@ def main():
 
         keyboard_joy=KeyboardJoy(robot_state, robot_command,peripheral_state)
 
-        #if 1:
-        sim_communication_thread=SimCommunication(robot_state, robot_command,peripheral_state)
-        
+        if 1:
+            communication_thread=SimCommunication(robot_state, robot_command,peripheral_state)
+        else:
+            communication_thread=CanCommunication(robot_state, robot_command,peripheral_state)
+
         executor=SingleThreadedExecutor()
-        executor.add_node(sim_communication_thread)
+        executor.add_node(communication_thread)
         executor.add_node(mevius)
         executor.add_node(mevius_command)
         executor.add_node(keyboard_joy)
