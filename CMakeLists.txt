@@ -14,17 +14,17 @@ find_package(std_msgs REQUIRED)
 
 find_package(rosidl_default_generators REQUIRED)
 
-set(msg_files
-  "msg/MeviusLog.msg"
-  DEPENDENCIES std_msgs
+#set(msg_files
+#  "msg/MeviusLog.msg"
+#  DEPENDENCIES std_msgs
+#
+#)
 
-)
-
-rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/MeviusLog.msg"
-  DEPENDENCIES std_msgs
-
-)
+#rosidl_generate_interfaces(${PROJECT_NAME}
+#  "msg/MeviusLog.msg"
+#  DEPENDENCIES std_msgs
+#
+#)
 
 ament_export_dependencies(rosidl_default_runtime)
 

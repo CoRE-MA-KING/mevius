@@ -10,13 +10,14 @@ from functools import partial
 import rclpy
 from rclpy.node import Node
 from rclpy.executors import SingleThreadedExecutor
+from rclpy.qos import QoSProfile, ReliabilityPolicy
 
 from scipy.spatial.transform import Rotation
 from std_msgs.msg import String, Float32MultiArray
 from sensor_msgs.msg import Imu, Joy, JointState
 from nav_msgs.msg import Odometry
 from .tmotor_lib import CanMotorController
-from mevius.msg._mevius_log import MeviusLog
+from mevius_massage.msg._mevius_log  import MeviusLog
 #from .msg import MeviusLog
 from .mevius_utils import *
 from .mevius_utils.parameters import parameters as P
@@ -143,11 +144,14 @@ def command_callback(command, robot_state, robot_command):
 
 def realsense_vel_callback(msg, params):
     peripherals_state = params
+    print("realsense vel callback!")
     with peripherals_state.lock:
         peripherals_state.body_vel = [msg.twist.twist.linear.x, msg.twist.twist.linear.y, msg.twist.twist.linear.z]
         # get odom quat
         peripherals_state.body_quat = [msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w]
         peripherals_state.realsense_last_time = time.time()
+        print(peripherals_state.realsense_last_time)
+        print("               UPDATE !! REALSENSE!!!!")
 
 def realsense_gyro_callback(msg, params):
     peripherals_state = params
@@ -519,11 +523,13 @@ class CameraOdom(Node):
      def __init__(self,peripheral_state):
         super().__init__("odom")
 
+
+        #qos_profile = QoSProfile(reliability=ReliabilityPolicy.BEST_EFFORT)
         self.subscription = self.create_subscription(
             Odometry,
-            '/camera/odom/sample',
+            '/camera/pose/sample',
             partial(realsense_vel_callback, params =(peripheral_state)),
-            1
+            QoSProfile(depth=10,reliability=ReliabilityPolicy.BEST_EFFORT)
         )
         self.subscription    
 
@@ -535,19 +541,19 @@ class CameraGyro(Node):
             Imu,
             "camera/gyro/sample",
             partial(realsense_gyro_callback, params =(peripheral_state)),
-            1
+            QoSProfile(depth=10,reliability=ReliabilityPolicy.BEST_EFFORT)
         )
         self.subscription    
 
 class CameraAccel(Node):
-     def __init__(self,robperipheral_state):
+     def __init__(self,peripheral_state):
         super().__init__("accel")
 
         self.subscription = self.create_subscription(
             Imu,
             "camera/accel/sample",
-            partial(realsense_acc_callback, params =(self.peripheral_state)),
-            1
+            partial(realsense_acc_callback, params =(peripheral_state)),
+            QoSProfile(depth=10,reliability=ReliabilityPolicy.BEST_EFFORT)
         )
         self.subscription    
 
@@ -654,6 +660,7 @@ class MainController(Node):
                 self.is_safe = False
                 print("Robot is almost fell down. PD gains become 0.")
 
+            #self.is_safe=True
             if not self.is_safe:
                 print("Robot is not safe. Please reboot the robot.")
                 with self.robot_command.lock:
@@ -725,6 +732,9 @@ def main():
         mevius_command=MeviusCommand(robot_state,robot_command)
 
         keyboard_joy=KeyboardJoy(robot_state, robot_command,peripheral_state)
+        camera_odom=CameraOdom(peripheral_state)
+        camera_gyro=CameraGyro(peripheral_state)
+        camera_accel=CameraAccel(peripheral_state)
 
         if 0:
             communication_thread=SimCommunication(robot_state, robot_command,peripheral_state)
@@ -737,7 +747,9 @@ def main():
         executor.add_node(mevius_command)
         executor.add_node(keyboard_joy)
         executor.add_node(main_controller)
-
+        executor.add_node(camera_odom)
+        executor.add_node(camera_gyro)
+        executor.add_node(camera_accel)
         try:
             executor.spin()
         finally:

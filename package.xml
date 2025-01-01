@@ -24,6 +24,7 @@
   <depend>rviz</depend>
   <depend>joint_state_publisher_gui</depend>
   <depend>gazebo</depend>
+  <depend>mevius_massage2</depend>
 
   <export>
 <!--    <build_type>ament_cmake</build_type>
