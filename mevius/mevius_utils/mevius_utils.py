@@ -11,10 +11,10 @@ from .parameters import parameters as P
 # copied from legged_gym
 class normalization:
     class obs_scales:
-        lin_vel = 2.0
-        ang_vel = 0.25
+        lin_vel = 1.0
+        ang_vel = 1.0
         dof_pos = 1.0
-        dof_vel = 0.05
+        dof_vel = 1.0
         height_measurements = 5.0
     clip_observations = 100.
     clip_actions = 100.
