@@ -58,7 +58,7 @@ class control:
     damping =  {'collar': 0.8, 'hip': 0.8, 'knee': 0.5}  # [N*m*s/rad]
 
     # action scale: target angle = actionScale * action + defaultAngle
-    action_scale = 0.3
+    action_scale = 0.5
     action_clipping = 20
     decimation = 4
     dt = 0.005

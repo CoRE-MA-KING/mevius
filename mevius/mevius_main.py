@@ -601,7 +601,7 @@ class MainController(Node):
         self.robot_state=robot_state
         self.robot_command=robot_command
         self.peripherals_state=peripherals_state
-        policy_path = os.path.join(os.path.dirname(__file__), "models/policy.pt")
+        policy_path = os.path.join(os.path.dirname(__file__), "models/my_policy.pt")
         self.policy = mevius_utils.read_torch_policy(policy_path).to("cpu")
 
         urdf_fullpath = os.path.join(os.path.dirname(__file__), "models/mevius.urdf")
