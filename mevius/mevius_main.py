@@ -1,4 +1,5 @@
 import argparse
+import array
 import os
 import sys
 import select
@@ -451,6 +452,7 @@ class SimCommunication(Node):
             if name in mujoco_actuator_names: # mujoco
                 idx = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_ACTUATOR, name) # mujoco
                 self.data.ctrl[idx] = ref_angle[i]
+                print(f"Actuator {name}: {self.data}")
 
         mujoco.mj_step(self.model, self.data)
 
@@ -470,13 +472,13 @@ class SimCommunication(Node):
             msg.temperature = self.robot_state.temperature[:]
 
         jointstate_msg.name = P.JOINT_NAME
-        jointstate_msg.position = msg.angle
-        jointstate_msg.velocity = msg.velocity
-        jointstate_msg.effort = msg.current
+        jointstate_msg.position = array.array("d", msg.angle)
+        jointstate_msg.velocity = array.array("d", msg.velocity)
+        jointstate_msg.effort = array.array("d", msg.current)
         self.jointstate_pub.pub.publish(jointstate_msg)
 
         odom_msg = Odometry()
-        odom_msg.header.stamp = self.get_clock().now()
+        odom_msg.header.stamp = self.get_clock().now().to_msg()
         odom_msg.twist.twist.linear.x = self.data.qvel[0]
         odom_msg.twist.twist.linear.y = self.data.qvel[1]
         odom_msg.twist.twist.linear.z = self.data.qvel[2]
@@ -488,7 +490,7 @@ class SimCommunication(Node):
         realsense_vel_callback(odom_msg, self.peripherals_state)
 
         gyro_msg = Imu()
-        gyro_msg.header.stamp = self.get_clock().now()
+        gyro_msg.header.stamp = self.get_clock().now().to_msg()
         # for realsense
         gyro_msg.angular_velocity.x = self.data.qvel[4]
         gyro_msg.angular_velocity.y = self.data.qvel[5]
@@ -496,7 +498,7 @@ class SimCommunication(Node):
         realsense_gyro_callback(gyro_msg, self.peripherals_state)
 
         acc_msg = Imu()
-        acc_msg.header.stamp = self.get_clock().now()
+        acc_msg.header.stamp = self.get_clock().now().to_msg()
         # for realsense
         acc_msg.linear_acceleration.x = self.data.qacc[1]
         acc_msg.linear_acceleration.y = self.data.qacc[2]
@@ -509,11 +511,14 @@ class SimCommunication(Node):
             msg.body_gyro = self.peripherals_state.body_gyro[:]
             msg.body_acc = self.peripherals_state.body_acc[:]
 
-        msg.ref_angle = ref_angle
-        msg.ref_velocity = ref_velocity
-        msg.ref_kp = ref_kp
-        msg.ref_kd = ref_kd
-        msg.ref_torque = ref_torque
+        def to_float_list(x):
+            return [float(v) for v in x]
+
+        msg.ref_angle = to_float_list(ref_angle)
+        msg.ref_velocity = to_float_list(ref_velocity)
+        msg.ref_kp = to_float_list(ref_kp)
+        msg.ref_kd = to_float_list(ref_kd)
+        msg.ref_torque = to_float_list(ref_torque)
 
         self.state_pub.pub.publish(msg)
 
@@ -644,6 +649,8 @@ class MainController(Node):
                     commands = [[min(max(-coef, coef * command / max_command), coef) for coef, command in zip(coefs, commands_)]]
                 else:
                     commands = torch.tensor([[0.0, 0.0, 0.0, 0.0]], dtype=torch.float, requires_grad=False)
+                
+                print("High Level Commands: {}".format(commands))
 
         # for safety
         if command in ["WALK"]:
