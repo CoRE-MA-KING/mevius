@@ -87,7 +87,7 @@ def get_policy_observation(base_quat_, base_lin_vel_, base_ang_vel_, command_, d
     if P.commands.heading_command:
         forward = quat_apply(base_quat, forward_vec)
         heading = torch.atan2(forward[:, 1], forward[:, 0])
-        command[:, 2] = torch.clip(0.5*wrap_to_pi(command[:, 3] - heading), -1., 1.)
+        command[:, 2] = torch.clip(3.0*wrap_to_pi(command[:, 3] - heading), -0.6, 0.6)
 
     # if the norm of command is lower than 0.03, set it to one
     is_standing = torch.tensor([[torch.norm(command[:, :3]) < 0.03]])
