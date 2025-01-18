@@ -6,7 +6,7 @@ import torch
 from .legged_gym_math.isaacgym_torch_utils import quat_apply, quat_rotate_inverse, get_axis_params
 from .legged_gym_math import quat_apply_yaw, wrap_to_pi, torch_rand_sqrt_float
 from .parameters import parameters as P
-
+from ament_index_python.packages import get_package_share_directory
 
 # copied from legged_gym
 class normalization:
@@ -36,7 +36,7 @@ def get_urdf_joint_params(urdf_path, joint_names):
     return joint_params
 
 def test_get_urdf_joint_params():
-    urdf_fullpath = os.path.join(os.path.dirname(__file__), "../models/mevius.urdf")
+    urdf_fullpath = os.path.join(get_package_share_directory("mevius"), "models/mevius.urdf")
 
     joint_names = [
             'BL_collar', 'BL_hip', 'BL_knee',
@@ -52,7 +52,7 @@ def read_torch_policy(policy_path):
     return policy
 
 def test_read_torch_policy():
-    policy_path = os.path.join(os.path.dirname(__file__), "../models/policy.pt")
+    policy_path = os.path.join(get_package_share_directory("mevius"), "models/policy.pt")
     policy = read_torch_policy(policy_path)
     input_data = torch.randn(1, 48)
 
@@ -115,7 +115,7 @@ def get_policy_output(policy, obs):
     return actions.numpy()[0] # reference angle [rad]
 
 def test_get_policy_output():
-    policy_path = os.path.join(os.path.dirname(__file__), "../models/policy.pt")
+    policy_path = os.path.join(get_package_share_directory("mevius"), "models/policy.pt")
     policy = read_torch_policy(policy_path)
     base_quat = [0.0, 0.0, 0.0, 1.0]
     base_lin_vel = [0.0, 0.0, 0.0]

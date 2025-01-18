@@ -6,6 +6,7 @@ import time
 import threading
 import numpy as np
 from functools import partial
+from typing import List, Literal, Tuple
 
 import rclpy
 from rclpy.node import Node
@@ -20,6 +21,7 @@ from .tmotor_lib import CanMotorController
 from mevius_massage.msg._mevius_log  import MeviusLog
 from .mevius_utils import *
 from .mevius_utils.parameters import parameters as P
+from ament_index_python.packages import get_package_share_directory
 
 from builtin_interfaces.msg import Time
 
@@ -48,6 +50,9 @@ class PeripheralState:
         self.virtual = [0.0] * 4
         self.lock = threading.Lock()
 
+
+ModeCommand = Literal["STANDBY", "STANDBY-STANDUP", "STANDUP", "STANDUP-WALK", "WALK", "DEBUG"]
+
 class RobotCommand:
     def __init__(self, n_motor=12):
         self.angle = [0.0] * n_motor
@@ -75,7 +80,7 @@ class RobotCommand:
 
 ################ function ##################
 
-def command_callback(command, robot_state, robot_command):
+def command_callback(command: ModeCommand, robot_state: RobotState, robot_command: RobotCommand):
     print("command_callback")
     print([command, robot_state, robot_command])
     with robot_command.lock:
@@ -141,7 +146,7 @@ def command_callback(command, robot_state, robot_command):
     with robot_command.lock:
         print("Command changed from {} to {}".format(prev_command, robot_command.command))
 
-def realsense_vel_callback(msg, params):
+def realsense_vel_callback(msg: Odometry, params: PeripheralState):
     peripherals_state = params
     print("realsense vel callback!")
     with peripherals_state.lock:
@@ -152,14 +157,14 @@ def realsense_vel_callback(msg, params):
         print(peripherals_state.realsense_last_time)
         print("               UPDATE !! REALSENSE!!!!")
 
-def realsense_gyro_callback(msg, params):
+def realsense_gyro_callback(msg: Imu, params: PeripheralState):
     peripherals_state = params
     with peripherals_state.lock:
         # peripherals_state.body_gyro = [msg.angular_velocity.x, msg.angular_velocity.y, msg.angular_velocity.z]
         # for realsenes arrangement
         peripherals_state.body_gyro = [msg.angular_velocity.z, msg.angular_velocity.x, msg.angular_velocity.y]
 
-def realsense_acc_callback(msg, params):
+def realsense_acc_callback(msg: Imu, params: PeripheralState):
     peripherals_state = params
     with peripherals_state.lock:
         # peripherals_state.body_acc = [msg.linear_acceleration.x, msg.linear_acceleration.y, -msg.linear_acceleration.z]
@@ -181,7 +186,7 @@ def virtual_joy_callback(msg, params):
     elif two_pushed == 1:
         command_callback("STANDUP-WALK", robot_state, robot_command)
 '''
-def spacenav_joy_callback(msg, params):
+def spacenav_joy_callback(msg: Joy, params: PeripheralState):
     peripherals_state = params
     with peripherals_state.lock:
         peripherals_state.spacenav_enable = True
@@ -195,7 +200,7 @@ def spacenav_joy_callback(msg, params):
         command_callback("STANDUP-WALK", robot_state, robot_command)
 
 class CanCommunication(Node):
-    def __init__(self,robot_state, robot_command, peripherals_state):
+    def __init__(self, robot_state: RobotState, robot_command: RobotCommand, peripherals_state: PeripheralState):
         super().__init__("can_communication")
         self.robot_state=robot_state
         self.robot_command=robot_command
@@ -206,9 +211,10 @@ class CanCommunication(Node):
         self.device = "can0"
         self.motor_type = "AK70_10_V1p1"
         self.n_motor = 12
-        self.motors = [None]*self.n_motor
-        for i in range(self.n_motor):
-            self.motors[i] = CanMotorController(self.device, P.CAN_ID[i], motor_type=self.motor_type, motor_dir=P.MOTOR_DIR[i])
+        self.motors = [
+            CanMotorController(self.device, P.CAN_ID[i], motor_type=self.motor_type, motor_dir=P.MOTOR_DIR[i])
+            for i in range(self.n_motor)
+        ]
         
         print("Enabling Motors...")
         for i, motor in enumerate(self.motors):
@@ -309,7 +315,7 @@ class CanCommunication(Node):
         self.state_pub.pub.publish(msg)
 
 class KeyboardJoy(Node):
-    def __init__(self,robot_state, robot_command, peripheral_state):
+    def __init__(self,robot_state: RobotState, robot_command: RobotCommand, peripheral_state: PeripheralState):
         super().__init__("key_joy_node")
         self.robot_state=robot_state
         self.robot_command=robot_command
@@ -322,7 +328,7 @@ class KeyboardJoy(Node):
         )
         self.subscription
     
-    def virtual_joy_callback(self, msg, params):
+    def virtual_joy_callback(self, msg: Joy, params: PeripheralState):
         peripherals_state = params
         print(msg)
         with peripherals_state.lock:
@@ -353,7 +359,7 @@ import mujoco
 import mujoco_viewer
 
 class SimCommunication(Node):
-    def __init__(self, robot_state, robot_command, peripherals_state):
+    def __init__(self, robot_state: RobotState, robot_command: RobotCommand, peripherals_state: PeripheralState):
         super().__init__("sim_communication")
         self.robot_state=robot_state
         self.robot_command=robot_command
@@ -542,7 +548,7 @@ class CameraAccel(Node):
 
 
 class MeviusCommand(Node):
-    def __init__(self,robot_state,robot_command):
+    def __init__(self,robot_state: RobotState, robot_command: RobotCommand):
         super().__init__("mevius_command")
         #self.subscription=self.create_subscription(String, ros_command_callback, (robot_state, robot_command), queue_size=1))
         #rospy.Subscriber("/mevius_command", String, ros_command_callback, (robot_state, robot_command), queue_size=1)
@@ -559,19 +565,19 @@ class MeviusCommand(Node):
         )
         self.subscription  # サブスクライバーを保持（破棄されないように）
 
-    def ros_command_callback(self, msg):
+    def ros_command_callback(self, msg: String):
         # トピックからメッセージを受信したときの処理
         self.get_logger().info(f"Received message: {msg.data}")
         self.get_logger().info(f"Robot state: {self.robot_state}, Robot command: {self.robot_command}")
 
 
-    def ros_command_callback(self, msg, params):
+    def ros_command_callback(self, msg: String, params: Tuple[RobotState, RobotCommand]):
         robot_state, robot_command = params
         print("Received ROS Command: {}".format(msg.data))
         command_callback(msg.data, robot_state, robot_command)
 
 class MainController(Node):
-    def __init__(self,robot_state, robot_command, peripherals_state):
+    def __init__(self, robot_state: RobotState, robot_command: RobotCommand, peripherals_state: PeripheralState):
         super().__init__("main_controller")
         print("Init main_controller Node")
         self.controlrate = 50.0
@@ -579,10 +585,10 @@ class MainController(Node):
         self.robot_state=robot_state
         self.robot_command=robot_command
         self.peripherals_state=peripherals_state
-        policy_path = os.path.join(os.path.dirname(__file__), "models/policy.pt")
+        policy_path = os.path.join(get_package_share_directory("mevius"), "models/policy.pt")
         self.policy = mevius_utils.read_torch_policy(policy_path).to("cpu")
 
-        urdf_fullpath = os.path.join(os.path.dirname(__file__), "models/mevius.urdf")
+        urdf_fullpath = os.path.join(get_package_share_directory("mevius"), "models/mevius.urdf")
         self.joint_params = mevius_utils.get_urdf_joint_params(urdf_fullpath, P.JOINT_NAME)
 
         self.is_safe = True
