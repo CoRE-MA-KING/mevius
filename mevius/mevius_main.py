@@ -18,7 +18,6 @@ from sensor_msgs.msg import Imu, Joy, JointState
 from nav_msgs.msg import Odometry
 from .tmotor_lib import CanMotorController
 from mevius_massage.msg._mevius_log  import MeviusLog
-#from .msg import MeviusLog
 from .mevius_utils import *
 from .mevius_utils.parameters import parameters as P
 
@@ -308,22 +307,6 @@ class CanCommunication(Node):
         msg.ref_torque = ref_torque
 
         self.state_pub.pub.publish(msg)
-
-
-def can_communication():
-
-
-    rate = rospy.Rate(P.CAN_HZ)
-
-    while not rospy.is_shutdown():
-        #たぶんいらない start_time = time.time()
-
-        # rate.sleep()
-        end_time = time.time()
-        if end_time - start_time < 1.0/P.CAN_HZ:
-            time.sleep(1.0/P.CAN_HZ - (end_time - start_time))
-            # end_time = time.time()
-            # print(end_time-start_time)
 
 class KeyboardJoy(Node):
     def __init__(self,robot_state, robot_command, peripheral_state):
@@ -692,13 +675,7 @@ class MainController(Node):
                 self.robot_command.angle = ref_angle
 
             self.last_actions = actions[:]
-        # with self.peripherals_state.lock:
-        #     print("Body Velocity: {}".format(self.peripherals_state.body_vel))
-        #     print("Body Gyro: {}".format(self.peripherals_state.body_gyro))
-        #     print("Body Acc: {}".format(self.peripherals_state.body_acc))
 
-        # rate.sleep()
-        # time.sleep(1)
 
 class Mevius(Node):
     def __init__(self):
@@ -765,40 +742,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-    '''
-    rospy.init_node("mevius")
-
-    robot_state = RobotState()
-    peripheral_state = PeripheralState()
-    robot_command = RobotCommand()
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--sim", action="store_true", help="do simulation")
-    args = parser.parse_args()
-
-    rospy.Subscriber("/mevius_command", String, ros_command_callback, (robot_state, robot_command), queue_size=1)
-    rospy.Subscriber("/camera/odom/sample", Odometry, realsense_vel_callback, peripheral_state, queue_size=1)
-    rospy.Subscriber("/camera/gyro/sample", Imu, realsense_gyro_callback, peripheral_state, queue_size=1)
-    rospy.Subscriber("/camera/accel/sample", Imu, realsense_acc_callback, peripheral_state, queue_size=1)
-    rospy.Subscriber("/spacenav/joy", Joy, spacenav_joy_callback, peripheral_state, queue_size=1)
-    rospy.Subscriber("/virtual/joy", Joy, virtual_joy_callback, peripheral_state, queue_size=1)
-    main_controller_thread = threading.Thread(target=main_controller, args=(robot_state, robot_command, peripheral_state))
-    if not args.sim:
-        can_communication_thread = threading.Thread(target=can_communication, args=(robot_state, robot_command, peripheral_state))
-    else:
-        sim_communication_thread = threading.Thread(target=sim_communication, args=(robot_state, robot_command, peripheral_state))
-
-    main_controller_thread.start()
-    if not args.sim:
-        can_communication_thread.start()
-    else:
-        sim_communication_thread.start()
-
-    main_controller_thread.join()
-    if not args.sim:
-        can_communication_thread.join()
-    else:
-        sim_communication_thread.join()
-    '''
-
