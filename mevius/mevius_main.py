@@ -47,7 +47,7 @@ class PeripheralState:
         self.spacenav_enable = False
         self.spacenav = [0.0] * 8
         self.virtual_enable = False
-        self.virtual = [0.0] * 4
+        self.virtual = [0.0] * 5
         self.lock = threading.Lock()
 
 
@@ -330,12 +330,12 @@ class KeyboardJoy(Node):
     
     def virtual_joy_callback(self, msg: Joy, params: PeripheralState):
         peripherals_state = params
-        print(msg)
+        # print(msg)
         with peripherals_state.lock:
             peripherals_state.virtual_enable = True
-            peripherals_state.virtual = [msg.axes[0], msg.axes[1], msg.buttons[0], msg.buttons[1]]
-            one_pushed = peripherals_state.virtual[2]
-            two_pushed = peripherals_state.virtual[3]
+            peripherals_state.virtual = [msg.axes[0], msg.axes[1], msg.axes[3], msg.buttons[0], msg.buttons[1]]
+            one_pushed = peripherals_state.virtual[3]
+            two_pushed = peripherals_state.virtual[4]
 
         if one_pushed == 1:
             command_callback("STANDBY-STANDUP", self.robot_state, self.robot_command)
@@ -585,7 +585,7 @@ class MainController(Node):
         self.robot_state=robot_state
         self.robot_command=robot_command
         self.peripherals_state=peripherals_state
-        policy_path = os.path.join(get_package_share_directory("mevius"), "models/policy.pt")
+        policy_path = os.path.join(get_package_share_directory("mevius"), "models/policy_core.pt")
         self.policy = mevius_utils.read_torch_policy(policy_path).to("cpu")
 
         urdf_fullpath = os.path.join(get_package_share_directory("mevius"), "models/mevius.urdf")
@@ -629,10 +629,15 @@ class MainController(Node):
                 elif self.peripherals_state.virtual_enable:
                     nav = self.peripherals_state.virtual[:]
                     max_command = 1.0
-                    commands_ = [nav[1], nav[0], 0, 0]
+                    x_vel = nav[1]
+                    y_vel = nav[0]
+                    yaw_vel = nav[2]
+                    commands_ = [x_vel, y_vel, yaw_vel, yaw_vel]
                     commands = [[min(max(-coef, coef * command / max_command), coef) for coef, command in zip(coefs, commands_)]]
                 else:
                     commands = torch.tensor([[0.0, 0.0, 0.0, 0.0]], dtype=torch.float, requires_grad=False)
+                
+                print("High Level Commands: {}".format(commands))
 
         # for safety
         if command in ["WALK"]:
