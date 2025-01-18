@@ -29,24 +29,27 @@
     <geom name="floor" pos="0 0 0.0" size="0 0 0.05" type="plane" material="groundplane"/>
 
     <!-- box object -->
-    <body name="box" pos="0.8 0.25 0.05">
-      <geom size="0.2 0.25 0.05" type="box" rgba="0.8 0.6 0.4 1"/>
+    <body name="box" pos="1.0 0.25 0.05">
+      <geom size="0.15 1.0 0.05" type="box" rgba="0.8 0.6 0.4 1"/>
+    </body>
+    <body name="box2" pos="1.7 0.25 0.05">
+      <geom size="0.2 1.0 0.05" type="box" rgba="0.8 0.6 0.4 1"/>
     </body>
   </worldbody>
 
   <actuator>
-    <position name="FR_collar" kp="50" kv="2"   joint="FR_collar"/>
-    <position name="FR_hip"    kp="50" kv="2"   joint="FR_hip"   />
-    <position name="FR_knee"   kp="30" kv="0.5" joint="FR_knee"  />
-    <position name="FL_collar" kp="50" kv="2"   joint="FL_collar"/>
-    <position name="FL_hip"    kp="50" kv="2"   joint="FL_hip"   />
-    <position name="FL_knee"   kp="30" kv="0.5" joint="FL_knee"  />
-    <position name="BR_collar" kp="50" kv="2"   joint="BR_collar"/>
-    <position name="BR_hip"    kp="50" kv="2"   joint="BR_hip"   />
-    <position name="BR_knee"   kp="30" kv="0.5" joint="BR_knee"  />
-    <position name="BL_collar" kp="50" kv="2"   joint="BL_collar"/>
-    <position name="BL_hip"    kp="50" kv="2"   joint="BL_hip"   />
-    <position name="BL_knee"   kp="30" kv="0.5" joint="BL_knee"  />
+    <position name="FR_collar" kp="30" kv="0.8"   joint="FR_collar"/>
+    <position name="FR_hip"    kp="30" kv="0.8"   joint="FR_hip"   />
+    <position name="FR_knee"   kp="25" kv="0.5" joint="FR_knee"  />
+    <position name="FL_collar" kp="30" kv="0.8"   joint="FL_collar"/>
+    <position name="FL_hip"    kp="30" kv="0.8"   joint="FL_hip"   />
+    <position name="FL_knee"   kp="25" kv="0.5" joint="FL_knee"  />
+    <position name="BR_collar" kp="30" kv="0.8"   joint="BR_collar"/>
+    <position name="BR_hip"    kp="30" kv="0.8"   joint="BR_hip"   />
+    <position name="BR_knee"   kp="25" kv="0.5" joint="BR_knee"  />
+    <position name="BL_collar" kp="30" kv="0.8"   joint="BL_collar"/>
+    <position name="BL_hip"    kp="30" kv="0.8"   joint="BL_hip"   />
+    <position name="BL_knee"   kp="25" kv="0.5" joint="BL_knee"  />
   </actuator>
 
   <keyframe>
