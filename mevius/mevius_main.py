@@ -689,7 +689,7 @@ class Mevius(Node):
 
 def main():
     import sys
-    print(sys.path)
+    #print(sys.path)
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--sim", action="store_true", help="do simulation")
@@ -713,7 +713,7 @@ def main():
         camera_gyro=CameraGyro(peripheral_state)
         camera_accel=CameraAccel(peripheral_state)
 
-        if 0:
+        if args.sim:
             communication_thread=SimCommunication(robot_state, robot_command,peripheral_state)
         else:
             communication_thread=CanCommunication(robot_state, robot_command,peripheral_state)
