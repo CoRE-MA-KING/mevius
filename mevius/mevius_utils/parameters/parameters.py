@@ -48,9 +48,9 @@ CAN_HZ = 50
 class commands:
     heading_command = False # if true: compute ang vel command from heading error
     class ranges:
-        lin_vel_x = [-0.9, 0.9] # min max [m/s]
-        lin_vel_y = [-0.6, 0.6] # min max [m/s]
-        ang_vel_yaw = [-0.6, 0.6] # min max [rad/s]
+        lin_vel_x = [-0.65, 0.65] # min max [m/s]
+        lin_vel_y = [-0.4, 0.4] # min max [m/s]
+        ang_vel_yaw = [-0.7, 0.7] # min max [rad/s]
         heading = [-3.14, 3.14]
 
 class control:
