@@ -469,7 +469,7 @@ class SimCommunication(Node):
         base_lin_vel_in_world = np.array([self.data.qvel[0], self.data.qvel[1], self.data.qvel[2]])
         # scipy quaternion: [x, y, z, w]
         base_quat_in_world = np.array([self.data.qpos[4], self.data.qpos[5], self.data.qpos[6], self.data.qpos[3]])
-        base_lin_vel_in_base = Rotation.from_quat(base_quat_in_world).apply(base_lin_vel_in_world)
+        base_lin_vel_in_base = Rotation.from_quat(base_quat_in_world).inv().apply(base_lin_vel_in_world)
         odom_msg.twist.twist.linear.x = base_lin_vel_in_base[0]
         odom_msg.twist.twist.linear.y = base_lin_vel_in_base[1]
         odom_msg.twist.twist.linear.z = base_lin_vel_in_base[2]
@@ -589,7 +589,7 @@ class MainController(Node):
         self.robot_state=robot_state
         self.robot_command=robot_command
         self.peripherals_state=peripherals_state
-        policy_path = os.path.join(get_package_share_directory("mevius"), "models/policy.pt")
+        policy_path = os.path.join(get_package_share_directory("mevius"), "models/policy_slow.pt")
         self.policy = mevius_utils.read_torch_policy(policy_path).to("cpu")
 
         urdf_fullpath = os.path.join(get_package_share_directory("mevius"), "models/mevius.urdf")
