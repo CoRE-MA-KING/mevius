@@ -73,7 +73,7 @@ def get_policy_observation(base_quat_, base_lin_vel_, base_ang_vel_, command_, d
     dof_pos = torch.tensor(dof_pos_, dtype=torch.float, requires_grad=False).reshape(1, -1)
     dof_vel = torch.tensor(dof_vel_, dtype=torch.float, requires_grad=False).reshape(1, -1)
     actions = torch.tensor(actions_, dtype=torch.float, requires_grad=False).reshape(1, -1)
-    command_scale = torch.tensor([obs_scales.lin_vel, obs_scales.lin_vel, obs_scales.ang_vel], requires_grad=False)
+    # command_scale = torch.tensor([obs_scales.lin_vel, obs_scales.lin_vel, obs_scales.ang_vel], requires_grad=False)
 
     # base_lin_vel = quat_rotate_inverse(base_quat, base_lin_vel)
     # base_ang_vel = quat_rotate_inverse(base_quat, base_ang_vel)
@@ -95,7 +95,7 @@ def get_policy_observation(base_quat_, base_lin_vel_, base_ang_vel_, command_, d
     obs = torch.cat((base_lin_vel * obs_scales.lin_vel, # 3D
                      base_ang_vel  * obs_scales.ang_vel, # 3D
                      projected_gravity, # 3D
-                     command[:, :3] * command_scale, # 3D
+                     command[:, :3], # 3D
                      (dof_pos - default_dof_pos) * obs_scales.dof_pos, # 12D
                      dof_vel * obs_scales.dof_vel, # 12D
                      actions, #12D

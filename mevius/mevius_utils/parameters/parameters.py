@@ -54,8 +54,8 @@ class commands:
         heading = [-3.14, 3.14]
 
 class control:
-    stiffness = {'collar': 30.0, 'hip': 30.0, 'knee': 25.0}  # [N*m/rad]
-    damping = {'collar': 0.8, 'hip': 0.8, 'knee': 0.5}  # [N*m*s/rad]
+    stiffness = {'collar': 50.0, 'hip': 50.0, 'knee': 30.0}  # [N*m/rad]
+    damping = {'collar': 2.0, 'hip': 2.0, 'knee': 0.5}  # [N*m*s/rad]
 
     # action scale: target angle = actionScale * action + defaultAngle
     action_scale = 0.5
