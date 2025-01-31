@@ -73,6 +73,9 @@ def get_policy_observation(base_quat_, base_lin_vel_, base_ang_vel_, command_, d
     dof_pos = torch.tensor(dof_pos_, dtype=torch.float, requires_grad=False).reshape(1, -1)
     dof_vel = torch.tensor(dof_vel_, dtype=torch.float, requires_grad=False).reshape(1, -1)
     actions = torch.tensor(actions_, dtype=torch.float, requires_grad=False).reshape(1, -1)
+
+    clip_actions = P.control.action_clipping
+    actions = torch.clip(actions, -clip_actions, clip_actions)
     # command_scale = torch.tensor([obs_scales.lin_vel, obs_scales.lin_vel, obs_scales.ang_vel], requires_grad=False)
 
     # base_lin_vel = quat_rotate_inverse(base_quat, base_lin_vel)
@@ -110,7 +113,7 @@ def get_policy_output(policy, obs):
     with torch.no_grad():
         actions = policy(obs)
 
-    clip_actions = normalization.clip_actions
+    clip_actions = P.control.action_clipping
     actions = torch.clip(actions, -clip_actions, clip_actions)
     return actions.numpy()[0] # reference angle [rad]
 

@@ -48,9 +48,9 @@ CAN_HZ = 50
 class commands:
     heading_command = False # if true: compute ang vel command from heading error
     class ranges:
-        lin_vel_x = [-0.65, 0.65] # min max [m/s]
-        lin_vel_y = [-0.4, 0.4] # min max [m/s]
-        ang_vel_yaw = [-0.7, 0.7] # min max [rad/s]
+        lin_vel_x = [-0.7, 0.7] # min max [m/s]
+        lin_vel_y = [-0.5, 0.5] # min max [m/s]
+        ang_vel_yaw = [-1.0, 1.0] # min max [rad/s]
         heading = [-3.14, 3.14]
 
 class control:
@@ -58,8 +58,8 @@ class control:
     damping = {'collar': 2.0, 'hip': 2.0, 'knee': 0.5}  # [N*m*s/rad]
 
     # action scale: target angle = actionScale * action + defaultAngle
-    action_scale = 0.5
-    action_clipping = 20
+    action_scale = 0.25
+    action_clipping = 10.0
     decimation = 4
     dt = 0.005
 

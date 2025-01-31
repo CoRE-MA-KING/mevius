@@ -589,7 +589,7 @@ class MainController(Node):
         self.robot_state=robot_state
         self.robot_command=robot_command
         self.peripherals_state=peripherals_state
-        policy_path = os.path.join(get_package_share_directory("mevius"), "models/policy_slow.pt")
+        policy_path = os.path.join(get_package_share_directory("mevius"), "models/policy1.pt")
         self.policy = mevius_utils.read_torch_policy(policy_path).to("cpu")
 
         urdf_fullpath = os.path.join(get_package_share_directory("mevius"), "models/mevius.urdf")
@@ -684,7 +684,7 @@ class MainController(Node):
             with self.robot_state.lock:
                 for i in range(len(ref_angle)):
                     if self.robot_state.angle[i]  < self.joint_params[i][0] or self.robot_state.angle[i] > self.joint_params[i][1]:
-                        ref_angle[i] = max(self.joint_params[i][0]+0.1, min(ref_angle[i], self.joint_params[i][1]-0.1))
+                        # ref_angle[i] = max(self.joint_params[i][0]+0.0, min(ref_angle[i], self.joint_params[i][1]-0.0))
                         print("# Joint {} out of range: {:.3f}".format(P.JOINT_NAME[i], self.robot_state.angle[i]))
             with self.robot_command.lock:
                 self.robot_command.angle = ref_angle
