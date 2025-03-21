@@ -146,29 +146,62 @@ def command_callback(command: ModeCommand, robot_state: RobotState, robot_comman
     with robot_command.lock:
         print("Command changed from {} to {}".format(prev_command, robot_command.command))
 
-def realsense_vel_callback(msg: Odometry, params: PeripheralState):
+
+def skew(v: np.ndarray) -> np.ndarray:
+    """
+        Skew-symmetric matrix of a vector v = (vx, vy, vz)
+    """
+    return np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
+
+
+def realsense_vel_callback(msg: Odometry, params: PeripheralState, sim: bool = False):
     peripherals_state = params
     print("realsense vel callback!")
     with peripherals_state.lock:
-        peripherals_state.body_vel = [msg.twist.twist.linear.x, msg.twist.twist.linear.y, msg.twist.twist.linear.z]
+        if sim:
+            peripherals_state.body_vel = [msg.twist.twist.linear.x, msg.twist.twist.linear.y, msg.twist.twist.linear.z]
+            peripherals_state.body_quat = [msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w]
+        else:
+            gyro_lin_vel_in_world = np.array([msg.twist.twist.linear.x, msg.twist.twist.linear.y, msg.twist.twist.linear.z])
+            # gyro_ang_vel_in_world = np.array([peripherals_state.body_gyro[0], peripherals_state.body_gyro[1], peripherals_state.body_gyro[2]])  # gyro_callback data
+            gyro_ang_vel_in_world = np.array([msg.twist.twist.angular.x, msg.twist.twist.angular.y, msg.twist.twist.angular.z])
+
+            ## for checking data -> this is assumed as same value
+            print("gyro angular velocity in world: (", gyro_ang_vel_in_world, "), (", peripherals_state.body_gyro, ")")
+
+            base_rot_in_gyro = np.eye(3) # no rotation
+            base_pos_in_gyro = np.array([0.0, 0.0, 0.0])  # TODO: set base position in realsense
+
+            # rotation of realsense is same as that of base_link because of no rotation
+            peripherals_state.body_quat = [msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w]
+
+            # scipy quat order: [x, y, z, w]
+            gyro_quat_in_world = np.array(peripherals_state.body_quat)
+            body_lin_vel_in_world = skew(gyro_ang_vel_in_world) @ (Rotation.from_quat(gyro_quat_in_world).as_matrix() @ base_pos_in_gyro) + gyro_lin_vel_in_world 
+            peripherals_state.body_vel = [body_lin_vel_in_world[0], body_lin_vel_in_world[1], body_lin_vel_in_world[2]]
         # get odom quat
-        peripherals_state.body_quat = [msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w]
         peripherals_state.realsense_last_time = time.time()
         print(peripherals_state.realsense_last_time)
         print("               UPDATE !! REALSENSE!!!!")
 
-def realsense_gyro_callback(msg: Imu, params: PeripheralState):
+
+def realsense_gyro_callback(msg: Imu, params: PeripheralState, sim: bool = False):
     peripherals_state = params
     with peripherals_state.lock:
         # peripherals_state.body_gyro = [msg.angular_velocity.x, msg.angular_velocity.y, msg.angular_velocity.z]
         # for realsenes arrangement
+
+        # NOTE: angular velocity of realsense is same as that of base_link
         peripherals_state.body_gyro = [msg.angular_velocity.z, msg.angular_velocity.x, msg.angular_velocity.y]
 
-def realsense_acc_callback(msg: Imu, params: PeripheralState):
+
+def realsense_acc_callback(msg: Imu, params: PeripheralState, sim: bool = False):
     peripherals_state = params
     with peripherals_state.lock:
         # peripherals_state.body_acc = [msg.linear_acceleration.x, msg.linear_acceleration.y, -msg.linear_acceleration.z]
         # for realsenes arrangement
+
+        # TODO: convert with respect to base_link
         peripherals_state.body_acc = [msg.linear_acceleration.z, msg.linear_acceleration.x, msg.linear_acceleration.y]
 
 '''
