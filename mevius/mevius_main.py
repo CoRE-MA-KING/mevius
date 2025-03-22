@@ -185,7 +185,7 @@ def realsense_vel_callback(msg: Odometry, params: PeripheralState, sim: bool = F
         print("               UPDATE !! REALSENSE!!!!")
 
 
-def realsense_gyro_callback(msg: Imu, params: PeripheralState, sim: bool = False):
+def realsense_gyro_callback(msg: Imu, params: PeripheralState):
     peripherals_state = params
     with peripherals_state.lock:
         # peripherals_state.body_gyro = [msg.angular_velocity.x, msg.angular_velocity.y, msg.angular_velocity.z]
@@ -195,7 +195,7 @@ def realsense_gyro_callback(msg: Imu, params: PeripheralState, sim: bool = False
         peripherals_state.body_gyro = [msg.angular_velocity.z, msg.angular_velocity.x, msg.angular_velocity.y]
 
 
-def realsense_acc_callback(msg: Imu, params: PeripheralState, sim: bool = False):
+def realsense_acc_callback(msg: Imu, params: PeripheralState):
     peripherals_state = params
     with peripherals_state.lock:
         # peripherals_state.body_acc = [msg.linear_acceleration.x, msg.linear_acceleration.y, -msg.linear_acceleration.z]
@@ -511,7 +511,7 @@ class SimCommunication(Node):
         odom_msg.pose.pose.orientation.x = self.data.qpos[4]
         odom_msg.pose.pose.orientation.y = self.data.qpos[5]
         odom_msg.pose.pose.orientation.z = self.data.qpos[6]
-        realsense_vel_callback(odom_msg, self.peripherals_state)
+        realsense_vel_callback(odom_msg, self.peripherals_state, sim=True)
 
         gyro_msg = Imu()
         gyro_msg.header.stamp = self.get_clock().now()
