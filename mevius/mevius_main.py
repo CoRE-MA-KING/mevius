@@ -150,8 +150,8 @@ def realsense_vel_callback(msg: Odometry, params: PeripheralState):
     peripherals_state = params
     print("realsense vel callback!")
     with peripherals_state.lock:
-        peripherals_state.body_vel = [msg.twist.twist.linear.x, msg.twist.twist.linear.y, msg.twist.twist.linear.z]
         # get odom quat
+        peripherals_state.body_vel = [msg.twist.twist.linear.x, msg.twist.twist.linear.y, msg.twist.twist.linear.z]
         peripherals_state.body_quat = [msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w]
         peripherals_state.realsense_last_time = time.time()
         print(peripherals_state.realsense_last_time)
@@ -589,7 +589,7 @@ class MainController(Node):
         self.robot_state=robot_state
         self.robot_command=robot_command
         self.peripherals_state=peripherals_state
-        policy_path = os.path.join(get_package_share_directory("mevius"), "models/policy-privilege2.pt")
+        policy_path = os.path.join(get_package_share_directory("mevius"), "models/policy_steps2.pt")
         self.policy = mevius_utils.read_torch_policy(policy_path).to("cpu")
 
         urdf_fullpath = os.path.join(get_package_share_directory("mevius"), "models/mevius.urdf")
