@@ -162,28 +162,21 @@ def realsense_vel_callback(msg: Odometry, params: PeripheralState, sim: bool = F
             peripherals_state.body_vel = [msg.twist.twist.linear.x, msg.twist.twist.linear.y, msg.twist.twist.linear.z]
             peripherals_state.body_quat = [msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w]
         else:
-            gyro_lin_vel_in_world = np.array([msg.twist.twist.linear.x, msg.twist.twist.linear.y, msg.twist.twist.linear.z])
-            # gyro_ang_vel_in_world = np.array([peripherals_state.body_gyro[0], peripherals_state.body_gyro[1], peripherals_state.body_gyro[2]])  # gyro_callback data
-            gyro_ang_vel_in_world = np.array([msg.twist.twist.angular.x, msg.twist.twist.angular.y, msg.twist.twist.angular.z])
+            gyro_lin_vel_in_base = np.array([msg.twist.twist.linear.x, msg.twist.twist.linear.y, msg.twist.twist.linear.z])
+            gyro_ang_vel_in_base = np.array([peripherals_state.body_gyro[0], peripherals_state.body_gyro[1], peripherals_state.body_gyro[2]])  # gyro_callback data
+            # gyro_ang_vel_in_world = np.array([msg.twist.twist.angular.x, msg.twist.twist.angular.y, msg.twist.twist.angular.z])
 
             ## for checking data -> this is assumed as same value
             # print("gyro angular velocity in world: (", gyro_ang_vel_in_world, "), (", peripherals_state.body_gyro, ")")
 
-            base_rot_in_gyro = np.eye(3) # no rotation
-            base_pos_in_gyro = np.array([-0.205, -0.009, -0.1675])  # TODO: set base position in realsense
-
-            # rotation of realsense is same as that of base_link because of no rotation
-            peripherals_state.body_quat = [msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w]
+            base_pos_in_gyro = np.array([-0.205, -0.009, -0.1675])  # translation from realsense position to the origin of robot base 
 
             # scipy quat order: [x, y, z, w]
-            gyro_quat_in_world = np.array(peripherals_state.body_quat)
-            if np.linalg.norm(gyro_quat_in_world) < 0.1: # zero norm quaternion
-                body_lin_vel_in_world = skew(gyro_ang_vel_in_world) @ (Rotation.from_quat(gyro_quat_in_world).as_matrix() @ base_pos_in_gyro) + gyro_lin_vel_in_world 
-            else:
-                body_lin_vel_in_world = gyro_lin_vel_in_world
-            print("linear velocity in world => gyro: (", gyro_lin_vel_in_world, "), body: (", body_lin_vel_in_world, ")")
-            # print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ angular velocity in world => gyro: (", gyro_ang_vel_in_world, ")")
-            peripherals_state.body_vel = [body_lin_vel_in_world[0], body_lin_vel_in_world[1], body_lin_vel_in_world[2]]
+            body_lin_vel_in_base = skew(gyro_ang_vel_in_base) @ base_pos_in_gyro + gyro_lin_vel_in_base
+
+            # set body vel and quat
+            peripherals_state.body_quat = [msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w]
+            peripherals_state.body_vel = [body_lin_vel_in_base[0], body_lin_vel_in_base[1], body_lin_vel_in_base[2]]
         # get odom quat
         peripherals_state.realsense_last_time = time.time()
         print(peripherals_state.realsense_last_time)
