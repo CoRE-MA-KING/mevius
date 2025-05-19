@@ -148,14 +148,11 @@ def command_callback(command: ModeCommand, robot_state: RobotState, robot_comman
 
 def realsense_vel_callback(msg: Odometry, params: PeripheralState):
     peripherals_state = params
-    print("realsense vel callback!")
     with peripherals_state.lock:
         # get odom quat
         peripherals_state.body_vel = [msg.twist.twist.linear.x, msg.twist.twist.linear.y, msg.twist.twist.linear.z]
         peripherals_state.body_quat = [msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w]
         peripherals_state.realsense_last_time = time.time()
-        print(peripherals_state.realsense_last_time)
-        print("               UPDATE !! REALSENSE!!!!")
 
 def realsense_gyro_callback(msg: Imu, params: PeripheralState):
     peripherals_state = params
@@ -264,7 +261,7 @@ class CanCommunication(Node):
             ref_kp = self.robot_command.kp[:]
             ref_kd = self.robot_command.kd[:]
             ref_torque = self.robot_command.torque[:]
-        print(ref_angle[:])
+        #print(ref_angle[:])
 
         pos_list = [0]*self.n_motor
         vel_list = [0]*self.n_motor
@@ -641,7 +638,7 @@ class MainController(Node):
                 else:
                     commands = torch.tensor([[0.0, 0.0, 0.0, 0.0]], dtype=torch.float, requires_grad=False)
                 
-                print("High Level Commands: {}".format(commands))
+                #print("High Level Commands: {}".format(commands))
 
         # for safety
         if command in ["WALK"]:
@@ -661,11 +658,14 @@ class MainController(Node):
             #self.is_safe=True
             if not self.is_safe:
                 print("Robot is not safe. Please reboot the robot.")
+                command_callback("STANDUP-WALK", self.robot_state, self.robot_command)
+                '''
                 with self.robot_command.lock:
                     self.robot_command.kp = [0.0] * 12
                     self.robot_command.kd = [0.0] * 12
                     with self.robot_state.lock:
                         self.robot_command.angle = self.robot_state.angle[:]
+                '''
                 # rate.sleep()
                 # continue
 
