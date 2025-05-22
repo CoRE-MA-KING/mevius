@@ -602,6 +602,8 @@ class MainController(Node):
         with self.robot_command.lock:
             command = self.robot_command.command
         if command in ["STANDBY", "STANDUP", "DEBUG"]:
+            if command in ["STANDBY"]:
+                self.is_safe = True
             with self.robot_command.lock:
                 self.robot_command.remaining_time -= 1.0/self.controlrate
                 self.robot_command.remaining_time = max(0, self.robot_command.remaining_time)
