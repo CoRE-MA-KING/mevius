@@ -1,10 +1,10 @@
 import copy
+import math
 import socket
 import struct
 import time
-import math
-from bitstring import BitArray
 
+from bitstring import BitArray
 
 # CAN frame packing/unpacking (see `struct can_frame` in <linux/can.h>)
 # 8 bytes of data is sent to the motor
@@ -16,161 +16,164 @@ recvBytes = 16
 
 # List of Motors Supported by this Driver
 legitimate_motors = [
-                    "AK80_6_V1",
-                    "AK80_6_V1p1",
-                    "AK80_6_V2",
-                    "AK80_9_V1p1",
-                    "AK80_9_V2",
-                    "AK70_10_V1p1",
-                    "AK10_9_V1p1",
-                    "AK60_6_V1p1",
-                    ]
+    "AK80_6_V1",
+    "AK80_6_V1p1",
+    "AK80_6_V2",
+    "AK80_9_V1p1",
+    "AK80_9_V2",
+    "AK70_10_V1p1",
+    "AK10_9_V1p1",
+    "AK60_6_V1p1",
+]
 
 # Constants for conversion
 # Working parameters for AK80-6 V1.0 firmware
 AK80_6_V1_PARAMS = {
-                "P_MIN" : -95.5,
-                "P_MAX" : 95.5,
-                "V_MIN" : -45.0,
-                "V_MAX" : 45.0,
-                "KP_MIN" : 0.0,
-                "KP_MAX" : 500,
-                "KD_MIN" : 0.0,
-                "KD_MAX" : 5.0,
-                "T_MIN" : -18.0,
-                "T_MAX" : 18.0,
-                "C_MIN" : -20.0,
-                "C_MAX" : 127.0,
-                "AXIS_DIRECTION" : 1
-                }
+    "P_MIN": -95.5,
+    "P_MAX": 95.5,
+    "V_MIN": -45.0,
+    "V_MAX": 45.0,
+    "KP_MIN": 0.0,
+    "KP_MAX": 500,
+    "KD_MIN": 0.0,
+    "KD_MAX": 5.0,
+    "T_MIN": -18.0,
+    "T_MAX": 18.0,
+    "C_MIN": -20.0,
+    "C_MAX": 127.0,
+    "AXIS_DIRECTION": 1,
+}
 
 # Working parameters for AK80-6 V1.1 firmware
 AK80_6_V1p1_PARAMS = {
-                "P_MIN" : -12.5,
-                "P_MAX" : 12.5,
-                "V_MIN" : -22.5,
-                "V_MAX" : 22.5,
-                "KP_MIN" : 0.0,
-                "KP_MAX" : 500,
-                "KD_MIN" : 0.0,
-                "KD_MAX" : 5.0,
-                "T_MIN" : -12.0,
-                "T_MAX" : 12.0,
-                "C_MIN" : -20.0,
-                "C_MAX" : 127.0,
-                "AXIS_DIRECTION" : 1
-                }
+    "P_MIN": -12.5,
+    "P_MAX": 12.5,
+    "V_MIN": -22.5,
+    "V_MAX": 22.5,
+    "KP_MIN": 0.0,
+    "KP_MAX": 500,
+    "KD_MIN": 0.0,
+    "KD_MAX": 5.0,
+    "T_MIN": -12.0,
+    "T_MAX": 12.0,
+    "C_MIN": -20.0,
+    "C_MAX": 127.0,
+    "AXIS_DIRECTION": 1,
+}
 
 # Working parameters for AK80-6 V2.0 firmware
 AK80_6_V2_PARAMS = {
-                "P_MIN" : -12.5,
-                "P_MAX" : 12.5,
-                "V_MIN" : -76.0,
-                "V_MAX" : 76.0,
-                "KP_MIN" : 0.0,
-                "KP_MAX" : 500.0,
-                "KD_MIN" : 0.0,
-                "KD_MAX" : 5.0,
-                "T_MIN" : -12.0,
-                "T_MAX" : 12.0,
-                "C_MIN" : -20.0,
-                "C_MAX" : 127.0,
-                "AXIS_DIRECTION" : 1
-                }
+    "P_MIN": -12.5,
+    "P_MAX": 12.5,
+    "V_MIN": -76.0,
+    "V_MAX": 76.0,
+    "KP_MIN": 0.0,
+    "KP_MAX": 500.0,
+    "KD_MIN": 0.0,
+    "KD_MAX": 5.0,
+    "T_MIN": -12.0,
+    "T_MAX": 12.0,
+    "C_MIN": -20.0,
+    "C_MAX": 127.0,
+    "AXIS_DIRECTION": 1,
+}
 
 # Working parameters for AK80-9 V1.1 firmware
 AK80_9_V1p1_PARAMS = {
-                "P_MIN" : -12.5,
-                "P_MAX" : 12.5,
-                "V_MIN" : -22.5,
-                "V_MAX" : 22.5,
-                "KP_MIN" : 0.0,
-                "KP_MAX" : 500,
-                "KD_MIN" : 0.0,
-                "KD_MAX" : 5.0,
-                "T_MIN" : -18.0,
-                "T_MAX" : 18.0,
-                "C_MIN" : -20.0,
-                "C_MAX" : 127.0,
-                "AXIS_DIRECTION" : 1
-                }
+    "P_MIN": -12.5,
+    "P_MAX": 12.5,
+    "V_MIN": -22.5,
+    "V_MAX": 22.5,
+    "KP_MIN": 0.0,
+    "KP_MAX": 500,
+    "KD_MIN": 0.0,
+    "KD_MAX": 5.0,
+    "T_MIN": -18.0,
+    "T_MAX": 18.0,
+    "C_MIN": -20.0,
+    "C_MAX": 127.0,
+    "AXIS_DIRECTION": 1,
+}
 
 # Working parameters for AK80-9 V2.0 firmware
 AK80_9_V2_PARAMS = {
-                "P_MIN" : -12.5,
-                "P_MAX" : 12.5,
-                "V_MIN" : -25.64,
-                "V_MAX" : 25.64,
-                "KP_MIN" : 0.0,
-                "KP_MAX" : 500.0,
-                "KD_MIN" : 0.0,
-                "KD_MAX" : 5.0,
-                "T_MIN" : -18.0,
-                "T_MAX" : 18.0,
-                "C_MIN" : -20.0,
-                "C_MAX" : 127.0,
-                "AXIS_DIRECTION" : 1
-                    }
+    "P_MIN": -12.5,
+    "P_MAX": 12.5,
+    "V_MIN": -25.64,
+    "V_MAX": 25.64,
+    "KP_MIN": 0.0,
+    "KP_MAX": 500.0,
+    "KD_MIN": 0.0,
+    "KD_MAX": 5.0,
+    "T_MIN": -18.0,
+    "T_MAX": 18.0,
+    "C_MIN": -20.0,
+    "C_MAX": 127.0,
+    "AXIS_DIRECTION": 1,
+}
 
 #  Working parameters for AK70-10 V1.1 firmware
 AK70_10_V1p1_params = {
-                "P_MIN" :  -12.5,
-                "P_MAX" :  12.5,
-                "V_MIN" :  -50,
-                "V_MAX" :  50,
-                "KP_MIN" :  0,
-                "KP_MAX" :  500,
-                "KD_MIN" :  0,
-                "KD_MAX" :  5,
-                "T_MIN" :  -25.0,
-                "T_MAX" :  25.0,
-                "C_MIN" : -20.0,
-                "C_MAX" : 127.0,
-                "AXIS_DIRECTION" :  1
-                    }
+    "P_MIN": -12.5,
+    "P_MAX": 12.5,
+    "V_MIN": -50,
+    "V_MAX": 50,
+    "KP_MIN": 0,
+    "KP_MAX": 500,
+    "KD_MIN": 0,
+    "KD_MAX": 5,
+    "T_MIN": -25.0,
+    "T_MAX": 25.0,
+    "C_MIN": -20.0,
+    "C_MAX": 127.0,
+    "AXIS_DIRECTION": 1,
+}
 
 # Working parameters for AK10-9 V1.1 firmware
 AK10_9_V1p1_PARAMS = {
-                "P_MIN" : -12.5,
-                "P_MAX" : 12.5,
-                "V_MIN" : -50.0,
-                "V_MAX" : 50.0,
-                "KP_MIN" : 0.0,
-                "KP_MAX" : 500,
-                "KD_MIN" : 0.0,
-                "KD_MAX" : 5.0,
-                "T_MIN" : -65.0,
-                "T_MAX" : 65.0,
-                "C_MIN" : -20.0,
-                "C_MAX" : 127.0,
-                "AXIS_DIRECTION" : 1
-                }
+    "P_MIN": -12.5,
+    "P_MAX": 12.5,
+    "V_MIN": -50.0,
+    "V_MAX": 50.0,
+    "KP_MIN": 0.0,
+    "KP_MAX": 500,
+    "KD_MIN": 0.0,
+    "KD_MAX": 5.0,
+    "T_MIN": -65.0,
+    "T_MAX": 65.0,
+    "C_MIN": -20.0,
+    "C_MAX": 127.0,
+    "AXIS_DIRECTION": 1,
+}
 
 AK60_6_V1p1_PARAMS = {
-                "P_MIN" : -12.5,
-                "P_MAX" : 12.5,
-                "V_MIN" : -45.0,
-                "V_MAX" : 45.0,
-                "KP_MIN" : 0.0,
-                "KP_MAX" : 500,
-                "KD_MIN" : 0.0,
-                "KD_MAX" : 5.0,
-                "T_MIN" : -15.0,
-                "T_MAX" : 15.0,
-                "C_MIN" : -20.0,
-                "C_MAX" : 127.0,
-                "AXIS_DIRECTION" : 1
-                }
+    "P_MIN": -12.5,
+    "P_MAX": 12.5,
+    "V_MIN": -45.0,
+    "V_MAX": 45.0,
+    "KP_MIN": 0.0,
+    "KP_MAX": 500,
+    "KD_MIN": 0.0,
+    "KD_MAX": 5.0,
+    "T_MIN": -15.0,
+    "T_MAX": 15.0,
+    "C_MIN": -20.0,
+    "C_MAX": 127.0,
+    "AXIS_DIRECTION": 1,
+}
 
 
-maxRawPosition = 2**16 - 1                      # 16-Bits for Raw Position Values
-maxRawVelocity = 2**12 - 1                      # 12-Bits for Raw Velocity Values
-maxRawTorque = 2**12 - 1                        # 12-Bits for Raw Torque Values
-maxRawKp = 2**12 - 1                            # 12-Bits for Raw Kp Values
-maxRawKd = 2**12 - 1                            # 12-Bits for Raw Kd Values
-maxRawCurrent = 2**12 - 1                       # 12-Bits for Raw Current Values
-dt_sleep = 0.0001                               # Time before motor sends a reply
-set_zero_sleep = 1.5                            # Time to wait after setting zero. Motor takes extra time to set zero.
+# 16-Bits for Raw Position Values
+maxRawPosition = 2**16 - 1
+# 12-Bits for Raw Velocity Values
+maxRawVelocity = 2**12 - 1
+maxRawTorque = 2**12 - 1  # 12-Bits for Raw Torque Values
+maxRawKp = 2**12 - 1  # 12-Bits for Raw Kp Values
+maxRawKd = 2**12 - 1  # 12-Bits for Raw Kd Values
+maxRawCurrent = 2**12 - 1  # 12-Bits for Raw Current Values
+dt_sleep = 0.0001  # Time before motor sends a reply
+# Time to wait after setting zero. Motor takes extra time to set zero.
+set_zero_sleep = 1.5
 
 
 def float_to_uint(x, x_min, x_max, numBits):
@@ -205,28 +208,39 @@ def waitOhneSleep(dt):
 
 
 class CanMotorController:
+    """Class for creating a Mini-Cheetah Motor Controller over CAN.
+
+    Uses SocketCAN driver for communication.
     """
-    Class for creating a Mini-Cheetah Motor Controller over CAN. Uses SocketCAN driver for
-    communication.
-    """
+
     can_socket_declared = False
     motor_socket = None
-    angle_range = None # [rad]
-    angle_offset = None # [rad]
-    current_pos = 0 # [rad]
-    current_vel = 0 # [rad/s]
-    current_cur = 0 # [A]
-    current_tem = 20 # [C]
+    angle_range = None  # [rad]
+    angle_offset = None  # [rad]
+    current_pos = 0  # [rad]
+    current_vel = 0  # [rad/s]
+    current_cur = 0  # [A]
+    current_tem = 20  # [C]
 
-    def __init__(self, can_socket="can0", motor_id=0x01, motor_dir=1, motor_type="AK80_6_V1p1", socket_timeout=0.05):
-        """
-        Instantiate the class with socket name, motor ID, and socket timeout.
+    def __init__(
+        self,
+        can_socket="can0",
+        motor_id=0x01,
+        motor_dir=1,
+        motor_type="AK80_6_V1p1",
+        socket_timeout=0.05,
+    ):
+        """Instantiate the class with socket name, motor ID, and socket
+        timeout.
+
         Sets up the socket communication for rest of the functions.
         """
 
         self.motorParams = AK80_6_V1p1_PARAMS  # default choice
         print("Using Motor Type: {}".format(motor_type))
-        assert motor_type in legitimate_motors, "Motor Type not in list of accepted motors."
+        assert (
+            motor_type in legitimate_motors
+        ), "Motor Type not in list of accepted motors."
         if motor_type == "AK80_6_V1":
             self.motorParams = copy.deepcopy(AK80_6_V1_PARAMS)
         elif motor_type == "AK80_6_V1p1":
@@ -251,8 +265,12 @@ class CanMotorController:
         if not CanMotorController.can_socket_declared:
             # create a raw socket and bind it to the given CAN interface
             try:
-                CanMotorController.motor_socket = socket.socket(socket.AF_CAN, socket.SOCK_RAW, socket.CAN_RAW)
-                CanMotorController.motor_socket.setsockopt(socket.SOL_CAN_RAW, socket.CAN_RAW_LOOPBACK, 0)
+                CanMotorController.motor_socket = socket.socket(
+                    socket.AF_CAN, socket.SOCK_RAW, socket.CAN_RAW
+                )
+                CanMotorController.motor_socket.setsockopt(
+                    socket.SOL_CAN_RAW, socket.CAN_RAW_LOOPBACK, 0
+                )
                 CanMotorController.motor_socket.bind(can_socket)
                 CanMotorController.motor_socket.settimeout(socket_timeout)
                 print("Bound to: ", can_socket)
@@ -265,10 +283,16 @@ class CanMotorController:
 
         # Initialize the command BitArrays for performance optimization
         self._p_des_BitArray = BitArray(
-            uint=float_to_uint(0, self.motorParams["P_MIN"], self.motorParams["P_MAX"], 16), length=16
+            uint=float_to_uint(
+                0, self.motorParams["P_MIN"], self.motorParams["P_MAX"], 16
+            ),
+            length=16,
         )
         self._v_des_BitArray = BitArray(
-            uint=float_to_uint(0, self.motorParams["V_MIN"], self.motorParams["V_MAX"], 12), length=12
+            uint=float_to_uint(
+                0, self.motorParams["V_MIN"], self.motorParams["V_MAX"], 12
+            ),
+            length=12,
         )
         self._kp_BitArray = BitArray(uint=0, length=12)
         self._kd_BitArray = BitArray(uint=0, length=12)
@@ -277,30 +301,26 @@ class CanMotorController:
         self._recv_bytes = BitArray(uint=0, length=48)
 
     def set_angle_range(self, low, upper, deg=True):
-        """
-        Set the angle range [deg] for the motor.
-        """
+        """Set the angle range [deg] for the motor."""
         if deg:
-            self.angle_range = [low*math.pi/180, upper*math.pi/180]
+            self.angle_range = [low * math.pi / 180, upper * math.pi / 180]
         else:
             self.angle_range = [low, upper]
         assert len(self.angle_range) == 2, "Invalid Angle Range Specified."
-        assert self.angle_range[0] < self.angle_range[1], "Invalid Angle Range Specified."
+        assert (
+            self.angle_range[0] < self.angle_range[1]
+        ), "Invalid Angle Range Specified."
 
     def set_angle_offset(self, angle_offset, deg=True):
-        """
-        Set the angle offset [deg] for the motor.
-        """
+        """Set the angle offset [deg] for the motor."""
         if deg:
-            self.angle_offset = angle_offset*math.pi/180
+            self.angle_offset = angle_offset * math.pi / 180
         else:
             self.angle_offset = angle_offset
         self.current_pos = self.angle_offset
 
     def _send_can_frame(self, data):
-        """
-        Send raw CAN data frame (in bytes) to the motor.
-        """
+        """Send raw CAN data frame (in bytes) to the motor."""
         can_dlc = len(data)
         can_msg = struct.pack(can_frame_fmt_send, self.motor_id, can_dlc, data)
         try:
@@ -310,8 +330,9 @@ class CanMotorController:
             print("Error: ", e)
 
     def _recv_can_frame(self):
-        """
-        Receive a CAN frame and unpack it. Returns can_id, can_dlc (data length), data (in bytes)
+        """Receive a CAN frame and unpack it.
+
+        Returns can_id, can_dlc (data length), data (in bytes)
         """
         try:
             # The motor sends back only 6 bytes.
@@ -323,9 +344,7 @@ class CanMotorController:
             print("Error: ", e)
 
     def enable_motor(self):
-        """
-        Sends the enable motor command to the motor.
-        """
+        """Sends the enable motor command to the motor."""
         try:
             # Bugfix: To remove the initial kick at motor start.
             # The current working theory is that the motor is not
@@ -333,11 +352,14 @@ class CanMotorController:
             # last command is executed. So we set zero position
             # and then enable the motor.
             self.set_zero_position()
-            self._send_can_frame(b"\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFC") # 16進数で8バイトのデータを表す.
+            # 16進数で8バイトのデータを表す.
+            self._send_can_frame(b"\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFC")
             waitOhneSleep(dt_sleep)
             can_id, can_dlc, motorStatusData = self._recv_can_frame()
             rawMotorData = self.decode_motor_status(motorStatusData)
-            pos, vel, cur, tem = self.convert_raw_to_physical_rad(rawMotorData[0], rawMotorData[1], rawMotorData[2], rawMotorData[3])
+            pos, vel, cur, tem = self.convert_raw_to_physical_rad(
+                rawMotorData[0], rawMotorData[1], rawMotorData[2], rawMotorData[3]
+            )
             print("Motor Enabled.")
             return pos, vel, cur, tem
         except Exception as e:
@@ -345,9 +367,7 @@ class CanMotorController:
             print("Error: ", e)
 
     def disable_motor(self):
-        """
-        Sends the disable motor command to the motor.
-        """
+        """Sends the disable motor command to the motor."""
         try:
             # Bugfix: To remove the initial kick at motor start.
             # The current working theory is that the motor "remembers" the last command. And this
@@ -357,11 +377,13 @@ class CanMotorController:
             _, _, _, _ = self.send_rad_command(0, 0, 0, 0, 0)
 
             # Do the actual disabling after zero command.
-            self._send_can_frame(b'\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFD')
+            self._send_can_frame(b"\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFD")
             waitOhneSleep(dt_sleep)
             can_id, can_dlc, motorStatusData = self._recv_can_frame()
             rawMotorData = self.decode_motor_status(motorStatusData)
-            pos, vel, cur, tem = self.convert_raw_to_physical_rad(rawMotorData[0], rawMotorData[1], rawMotorData[2], rawMotorData[3])
+            pos, vel, cur, tem = self.convert_raw_to_physical_rad(
+                rawMotorData[0], rawMotorData[1], rawMotorData[2], rawMotorData[3]
+            )
             print("Motor Disabled.")
             return pos, vel, cur, tem
         except Exception as e:
@@ -369,15 +391,15 @@ class CanMotorController:
             print("Error: ", e)
 
     def set_zero_position(self):
-        """
-        Sends command to set current position as Zero position.
-        """
+        """Sends command to set current position as Zero position."""
         try:
             self._send_can_frame(b"\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFE")
             waitOhneSleep(set_zero_sleep)
             can_id, can_dlc, motorStatusData = self._recv_can_frame()
             rawMotorData = self.decode_motor_status(motorStatusData)
-            pos, vel, cur, tem = self.convert_raw_to_physical_rad(rawMotorData[0], rawMotorData[1], rawMotorData[2], rawMotorData[3])
+            pos, vel, cur, tem = self.convert_raw_to_physical_rad(
+                rawMotorData[0], rawMotorData[1], rawMotorData[2], rawMotorData[3]
+            )
             print("Zero Position set.")
             return pos, vel, cur, tem
         except Exception as e:
@@ -385,8 +407,8 @@ class CanMotorController:
             print("Error: ", e)
 
     def decode_motor_status(self, data_frame):
-        """
-        Function to decode the motor status reply message into its constituent raw values.
+        """Function to decode the motor status reply message into its
+        constituent raw values.
 
         /// CAN Reply Packet Structure ///
         /// 16 bit position, between -4*pi and 4*pi
@@ -424,7 +446,9 @@ class CanMotorController:
 
         return positionRawValue, velocityRawValue, currentRawValue, temperatureRawValue
 
-    def convert_raw_to_physical_rad(self, positionRawValue, velocityRawValue, currentRawValue, temperatureRawValue):
+    def convert_raw_to_physical_rad(
+        self, positionRawValue, velocityRawValue, currentRawValue, temperatureRawValue
+    ):
         """
         Function to convert the raw values from the motor to physical values:
 
@@ -443,10 +467,18 @@ class CanMotorController:
         returns: position (radians), velocity (rad/s), current (amps)
         """
 
-        physicalPositionRad = uint_to_float(positionRawValue, self.motorParams["P_MIN"], self.motorParams["P_MAX"], 16)
-        physicalVelocityRad = uint_to_float(velocityRawValue, self.motorParams["V_MIN"], self.motorParams["V_MAX"], 12)
-        physicalCurrent = uint_to_float(currentRawValue, self.motorParams["T_MIN"], self.motorParams["T_MAX"], 12)
-        physicalTemperature = uint_to_float(temperatureRawValue, self.motorParams["C_MIN"], self.motorParams["C_MAX"], 8)
+        physicalPositionRad = uint_to_float(
+            positionRawValue, self.motorParams["P_MIN"], self.motorParams["P_MAX"], 16
+        )
+        physicalVelocityRad = uint_to_float(
+            velocityRawValue, self.motorParams["V_MIN"], self.motorParams["V_MAX"], 12
+        )
+        physicalCurrent = uint_to_float(
+            currentRawValue, self.motorParams["T_MIN"], self.motorParams["T_MAX"], 12
+        )
+        physicalTemperature = uint_to_float(
+            temperatureRawValue, self.motorParams["C_MIN"], self.motorParams["C_MAX"], 8
+        )
 
         # Correct Axis Direction
         physicalPositionRad = physicalPositionRad * self.motorParams["AXIS_DIRECTION"]
@@ -461,7 +493,12 @@ class CanMotorController:
         self.current_cur = physicalCurrent
         self.current_tem = physicalTemperature
 
-        return physicalPositionRad, physicalVelocityRad, physicalCurrent, physicalTemperature
+        return (
+            physicalPositionRad,
+            physicalVelocityRad,
+            physicalCurrent,
+            physicalTemperature,
+        )
 
     # command q --> range --> offset --> axis
     def convert_physical_rad_to_raw(self, p_des_rad, v_des_rad, kp, kd, tau_ff):
@@ -471,24 +508,36 @@ class CanMotorController:
         v_des_rad = v_des_rad * self.motorParams["AXIS_DIRECTION"]
         tau_ff = tau_ff * self.motorParams["AXIS_DIRECTION"]
 
-        rawPosition = float_to_uint(p_des_rad, self.motorParams["P_MIN"], self.motorParams["P_MAX"], 16)
-        rawVelocity = float_to_uint(v_des_rad, self.motorParams["V_MIN"], self.motorParams["V_MAX"], 12)
-        rawTorque = float_to_uint(tau_ff, self.motorParams["T_MIN"], self.motorParams["T_MAX"], 12)
+        rawPosition = float_to_uint(
+            p_des_rad, self.motorParams["P_MIN"], self.motorParams["P_MAX"], 16
+        )
+        rawVelocity = float_to_uint(
+            v_des_rad, self.motorParams["V_MIN"], self.motorParams["V_MAX"], 12
+        )
+        rawTorque = float_to_uint(
+            tau_ff, self.motorParams["T_MIN"], self.motorParams["T_MAX"], 12
+        )
 
         rawKp = (maxRawKp * kp) / self.motorParams["KP_MAX"]
 
         rawKd = (maxRawKd * kd) / self.motorParams["KD_MAX"]
 
-        return int(rawPosition), int(rawVelocity), int(rawKp), int(rawKd), int(rawTorque)
+        return (
+            int(rawPosition),
+            int(rawVelocity),
+            int(rawKp),
+            int(rawKd),
+            int(rawTorque),
+        )
 
     def _send_raw_command(self, p_des, v_des, kp, kd, tau_ff):
-        """
-        Package and send raw (uint) values of correct length to the motor.
+        """Package and send raw (uint) values of correct length to the motor.
 
-        _send_raw_command(desired position, desired velocity, position gain, velocity gain,
-                        feed-forward torque)
+        _send_raw_command(desired position, desired velocity, position
+        gain, velocity gain,                 feed-forward torque)
 
-        Sends data over CAN, reads response, and returns the motor status data (in bytes).
+        Sends data over CAN, reads response, and returns the motor
+        status data (in bytes).
         """
         self._p_des_BitArray.uint = p_des
         self._v_des_BitArray.uint = v_des
@@ -530,7 +579,9 @@ class CanMotorController:
         p_des_rad = math.radians(p_des_deg)
         v_des_rad = math.radians(v_des_deg)
 
-        pos_rad, vel_rad, cur, tem = self.send_rad_command(p_des_rad, v_des_rad, kp, kd, tau_ff)
+        pos_rad, vel_rad, cur, tem = self.send_rad_command(
+            p_des_rad, v_des_rad, kp, kd, tau_ff
+        )
         pos = math.degrees(pos_rad)
         vel = math.degrees(vel_rad)
         return pos, vel, cur, tem
@@ -561,19 +612,27 @@ class CanMotorController:
             p_des_rad = p_des_rad - self.angle_offset
 
         # Clip Position if outside Limits
-        p_des_rad = min(max(self.motorParams["P_MIN"], p_des_rad), self.motorParams["P_MAX"])
+        p_des_rad = min(
+            max(self.motorParams["P_MIN"], p_des_rad), self.motorParams["P_MAX"]
+        )
         # Clip Velocity if outside Limits
-        v_des_rad = min(max(self.motorParams["V_MIN"], v_des_rad), self.motorParams["V_MAX"])
+        v_des_rad = min(
+            max(self.motorParams["V_MIN"], v_des_rad), self.motorParams["V_MAX"]
+        )
         # Clip Kp if outside Limits
         kp = min(max(self.motorParams["KP_MIN"], kp), self.motorParams["KP_MAX"])
         # Clip Kd if outside Limits
         kd = min(max(self.motorParams["KD_MIN"], kd), self.motorParams["KD_MAX"])
 
-        rawPos, rawVel, rawKp, rawKd, rawTauff = self.convert_physical_rad_to_raw(p_des_rad, v_des_rad, kp, kd, tau_ff)
+        rawPos, rawVel, rawKp, rawKd, rawTauff = self.convert_physical_rad_to_raw(
+            p_des_rad, v_des_rad, kp, kd, tau_ff
+        )
 
         motorStatusData = self._send_raw_command(rawPos, rawVel, rawKp, rawKd, rawTauff)
         rawMotorData = self.decode_motor_status(motorStatusData)
-        pos, vel, cur, tem = self.convert_raw_to_physical_rad(rawMotorData[0], rawMotorData[1], rawMotorData[2], rawMotorData[3])
+        pos, vel, cur, tem = self.convert_raw_to_physical_rad(
+            rawMotorData[0], rawMotorData[1], rawMotorData[2], rawMotorData[3]
+        )
 
         return pos, vel, cur, tem
 
@@ -590,13 +649,14 @@ class CanMotorController:
         T_MIN_NEW,
         T_MAX_NEW,
     ):
-        """
-        Function to change the global motor constants. Default values are for AK80-6 motor from
-        CubeMars. For a different motor, the min/max values can be changed here for correct
-        conversion.
-        change_motor_params(P_MIN_NEW (radians), P_MAX_NEW (radians), V_MIN_NEW (rad/s),
-                            V_MAX_NEW (rad/s), KP_MIN_NEW, KP_MAX_NEW, KD_MIN_NEW, KD_MAX_NEW,
-                            T_MIN_NEW (Nm), T_MAX_NEW (Nm))
+        """Function to change the global motor constants.
+
+        Default values are for AK80-6 motor from CubeMars. For a
+        different motor, the min/max values can be changed here for
+        correct conversion. change_motor_params(P_MIN_NEW (radians),
+        P_MAX_NEW (radians), V_MIN_NEW (rad/s),
+        V_MAX_NEW (rad/s), KP_MIN_NEW, KP_MAX_NEW, KD_MIN_NEW,
+        KD_MAX_NEW,                     T_MIN_NEW (Nm), T_MAX_NEW (Nm))
         """
         self.motorParams["P_MIN"] = P_MIN_NEW
         self.motorParams["P_MAX"] = P_MAX_NEW
