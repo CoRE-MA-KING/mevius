@@ -346,8 +346,7 @@ class CanCommunication(Node):
         for i, motor in enumerate(self.motors):
             try:
                 pos, vel, cur, tem = motor.send_rad_command(
-                    ref_angle[i], ref_velocity[i], ref_kp[i], ref_kd[i], ref_torque[i]
-                )
+                    ref_angle[i], ref_velocity[i], ref_kp[i], ref_kd[i], ref_torque[i])
             except Exception as e:
                 self.error_count[i] += 1
                 print(
@@ -429,9 +428,15 @@ class KeyboardJoy(Node):
             two_pushed = peripherals_state.virtual[4]
 
         if one_pushed == 1:
-            command_callback("STANDBY-STANDUP", self.robot_state, self.robot_command)
+            command_callback(
+                "STANDBY-STANDUP",
+                self.robot_state,
+                self.robot_command)
         elif two_pushed == 1:
-            command_callback("STANDUP-WALK", self.robot_state, self.robot_command)
+            command_callback(
+                "STANDUP-WALK",
+                self.robot_state,
+                self.robot_command)
 
 
 class MeviusLogPub(Node):
@@ -476,14 +481,16 @@ class SimCommunication(Node):
         ]
         with self.robot_state.lock:
             for i, name in enumerate(P.JOINT_NAME):
-                idx = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_ACTUATOR, name)
+                idx = mujoco.mj_name2id(
+                    self.model, mujoco.mjtObj.mjOBJ_ACTUATOR, name)
                 self.robot_state.angle[i] = self.data.qpos[7 + idx]
                 self.robot_state.velocity[i] = self.data.qvel[6 + idx]
                 self.robot_state.current[i] = 0.0
                 self.robot_state.temperature[i] = 25.0
 
         for i, name in enumerate(P.JOINT_NAME):
-            idx = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_ACTUATOR, name)
+            idx = mujoco.mj_name2id(
+                self.model, mujoco.mjtObj.mjOBJ_ACTUATOR, name)
             self.data.ctrl[idx] = P.STANDBY_ANGLE[i]
 
         self.state_pub = MeviusLogPub()
@@ -574,9 +581,8 @@ class SimCommunication(Node):
         base_quat_in_world = np.array(
             [self.data.qpos[4], self.data.qpos[5], self.data.qpos[6], self.data.qpos[3]]
         )
-        base_lin_vel_in_base = (
-            Rotation.from_quat(base_quat_in_world).inv().apply(base_lin_vel_in_world)
-        )
+        base_lin_vel_in_base = (Rotation.from_quat(
+            base_quat_in_world).inv().apply(base_lin_vel_in_world))
         odom_msg.twist.twist.linear.x = base_lin_vel_in_base[0]
         odom_msg.twist.twist.linear.y = base_lin_vel_in_base[1]
         odom_msg.twist.twist.linear.z = base_lin_vel_in_base[2]
@@ -673,7 +679,11 @@ class MeviusCommand(Node):
         self.subscription = self.create_subscription(
             String,  # メッセージの型
             'mevius_command',  # トピック名
-            partial(self.ros_command_callback, params=(robot_state, robot_command)),
+            partial(
+                self.ros_command_callback,
+                params=(
+                    robot_state,
+                    robot_command)),
             1,  # キューサイズ
         )
         self.subscription  # サブスクライバーを保持（破棄されないように）
@@ -696,7 +706,8 @@ class MainController(Node):
         super().__init__('main_controller')
         print('Init main_controller Node')
         self.controlrate = 50.0
-        self.timer = self.create_timer(1.0 / self.controlrate, self.timer_callback)
+        self.timer = self.create_timer(
+            1.0 / self.controlrate, self.timer_callback)
         self.robot_state = robot_state
         self.robot_command = robot_command
         self.peripherals_state = peripherals_state
@@ -801,7 +812,10 @@ class MainController(Node):
                     print('Realsense data is too old. PD gains become 0.')
                     self.is_safe = False
             # falling down
-            if self.is_safe and (Rotation.from_quat(base_quat).as_matrix()[2, 2] < 0.6):
+            if self.is_safe and (
+                Rotation.from_quat(base_quat).as_matrix()[
+                    2,
+                    2] < 0.6):
                 self.is_safe = False
                 print('Robot is almost fell down. PD gains become 0.')
 
@@ -834,7 +848,11 @@ class MainController(Node):
             scaled_actions = P.control.action_scale * actions
 
         if command in ['WALK']:
-            ref_angle = [a + b for a, b in zip(scaled_actions, P.DEFAULT_ANGLE[:])]
+            ref_angle = [
+                a + b for a,
+                b in zip(
+                    scaled_actions,
+                    P.DEFAULT_ANGLE[:])]
             with self.robot_state.lock:
                 for i in range(len(ref_angle)):
                     if (
@@ -885,11 +903,13 @@ def main():
         peripheral_state = PeripheralState()
         robot_command = RobotCommand()
 
-        main_controller = MainController(robot_state, robot_command, peripheral_state)
+        main_controller = MainController(
+            robot_state, robot_command, peripheral_state)
 
         mevius_command = MeviusCommand(robot_state, robot_command)
 
-        keyboard_joy = KeyboardJoy(robot_state, robot_command, peripheral_state)
+        keyboard_joy = KeyboardJoy(
+            robot_state, robot_command, peripheral_state)
         camera_odom = CameraOdom(peripheral_state)
         camera_gyro = CameraGyro(peripheral_state)
         camera_accel = CameraAccel(peripheral_state)
