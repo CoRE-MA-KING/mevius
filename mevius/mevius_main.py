@@ -29,73 +29,11 @@ from .mevius_utils import (
 )
 from .mevius_utils.parameters import parameters as P
 from .tmotor_lib import CanMotorController
+from .types import ModeCommand, PeripheralState, RobotCommand, RobotState
 
 # TODO add terminal display of thermometer, etc.
 
 np.set_printoptions(precision=3)
-
-
-class RobotState:
-    """Represents the state of the robot."""
-
-    def __init__(self, n_motor=12):
-        """Initializes the robot state."""
-        self.angle = [0.0] * n_motor
-        self.velocity = [0.0] * n_motor
-        self.current = [0.0] * n_motor
-        self.temperature = [0.0] * n_motor
-        self.lock = threading.Lock()
-
-
-class PeripheralState:
-    """Represents the state of the robot's peripherals."""
-
-    def __init__(self):
-        """Initializes the peripheral state."""
-        self.realsense_last_time = None
-        self.body_vel = [0.0] * 3
-        self.body_quat = [0.0] * 4
-        self.body_gyro = [0.0] * 3
-        self.body_acc = [0.0] * 3
-        self.spacenav_enable = False
-        self.spacenav = [0.0] * 8
-        self.virtual_enable = False
-        self.virtual = [0.0] * 5
-        self.lock = threading.Lock()
-
-
-ModeCommand = Literal[
-    "STANDBY", "STANDBY-STANDUP", "STANDUP", "STANDUP-WALK", "WALK", "DEBUG"
-]
-
-
-class RobotCommand:
-    """Represents a command to the robot."""
-
-    def __init__(self, n_motor=12):
-        """Initializes the robot command."""
-        self.angle = [0.0] * n_motor
-        self.velocity = [0.0] * n_motor
-        self.kp = []
-        self.kd = []
-        self.coef = 1.0
-        for name in P.JOINT_NAME:
-            for key in P.control.stiffness.keys():
-                if key in name:
-                    self.kp.append(P.control.stiffness[key] * self.coef)
-                    self.kd.append(P.control.damping[key] * self.coef)
-        assert len(self.kp) == n_motor
-        assert len(self.kd) == n_motor
-        self.torque = [0.0] * n_motor
-
-        self.command = "STANDBY"
-        self.initial_angle = [0.0] * n_motor
-        self.final_angle = [0.0] * n_motor
-        self.interpolating_time = 0.0
-        self.remaining_time = 0.0
-        self.initialized = False
-
-        self.lock = threading.Lock()
 
 
 ################ function ##################
@@ -104,85 +42,77 @@ class RobotCommand:
 def command_callback(
     command: ModeCommand, robot_state: RobotState, robot_command: RobotCommand
 ):
-    print('command_callback')
+    print("command_callback")
     print([command, robot_state, robot_command])
     with robot_command.lock:
         prev_command = robot_command.command
         if not robot_command.initialized:
             pass
-    if command == 'STANDBY-STANDUP':
+    if command == "STANDBY-STANDUP":
         with robot_command.lock:
             if robot_command.remaining_time < 0.1:
-                if prev_command == 'STANDBY':
-                    robot_command.command = 'STANDUP'
+                if prev_command == "STANDBY":
+                    robot_command.command = "STANDUP"
                     with robot_state.lock:
                         robot_command.initial_angle = robot_state.angle[:]
                         robot_command.final_angle = P.DEFAULT_ANGLE[:]
                         robot_command.interpolating_time = 3.0
-                        robot_command.remaining_time = (
-                            robot_command.interpolating_time
-                        )
-                elif prev_command == 'STANDUP':
-                    robot_command.command = 'STANDBY'
+                        robot_command.remaining_time = robot_command.interpolating_time
+                elif prev_command == "STANDUP":
+                    robot_command.command = "STANDBY"
                     with robot_state.lock:
                         robot_command.initial_angle = robot_state.angle[:]
                         robot_command.final_angle = P.STANDBY_ANGLE[:]
                         robot_command.interpolating_time = 3.0
-                        robot_command.remaining_time = (
-                            robot_command.interpolating_time
-                        )
-    elif command == 'STANDUP-WALK':
+                        robot_command.remaining_time = robot_command.interpolating_time
+    elif command == "STANDUP-WALK":
         with robot_command.lock:
             if robot_command.remaining_time < 0.1:
-                if prev_command == 'STANDUP':
-                    robot_command.command = 'WALK'
+                if prev_command == "STANDUP":
+                    robot_command.command = "WALK"
                     robot_command.interpolating_time = 3.0
                     robot_command.remaining_time = robot_command.interpolating_time
-                elif prev_command == 'WALK':
-                    robot_command.command = 'STANDUP'
+                elif prev_command == "WALK":
+                    robot_command.command = "STANDUP"
                     with robot_state.lock:
                         robot_command.initial_angle = robot_state.angle[:]
                         robot_command.final_angle = P.DEFAULT_ANGLE[:]
                         robot_command.interpolating_time = 3.0
-                        robot_command.remaining_time = (
-                            robot_command.interpolating_time
-                        )
-    elif command == 'STANDBY':
+                        robot_command.remaining_time = robot_command.interpolating_time
+    elif command == "STANDBY":
         with robot_command.lock:
-            robot_command.command = 'STANDBY'
+            robot_command.command = "STANDBY"
             with robot_state.lock:
                 robot_command.initial_angle = robot_state.angle[:]
                 robot_command.final_angle = P.STANDBY_ANGLE[:]
                 robot_command.interpolating_time = 3.0
                 robot_command.remaining_time = robot_command.interpolating_time
-    elif command == 'STANDUP':
-        robot_command.command = 'STANDUP'
+    elif command == "STANDUP":
+        robot_command.command = "STANDUP"
         with robot_state.lock:
             robot_command.initial_angle = robot_state.angle[:]
             robot_command.final_angle = P.DEFAULT_ANGLE[:]
             robot_command.interpolating_time = 3.0
             robot_command.remaining_time = robot_command.interpolating_time
-    elif command == 'DEBUG':
-        robot_command.command = 'DEBUG'
+    elif command == "DEBUG":
+        robot_command.command = "DEBUG"
         with robot_state.lock:
             robot_command.initial_angle = robot_state.angle[:]
             robot_command.final_angle = P.DEBUG_ANGLE[:]
             robot_command.interpolating_time = 3.0
             robot_command.remaining_time = robot_command.interpolating_time
-    elif prev_command == 'STANDUP' and command == 'WALK':
-        robot_command.command = 'WALK'
+    elif prev_command == "STANDUP" and command == "WALK":
+        robot_command.command = "WALK"
 
     with robot_command.lock:
         print(
-            'Command changed from {} to {}'.format(
-                prev_command, robot_command.command
-            )
+            "Command changed from {} to {}".format(prev_command, robot_command.command)
         )
 
 
 def realsense_vel_callback(msg: Odometry, params: PeripheralState):
     peripherals_state = params
-    print('realsense vel callback!')
+    print("realsense vel callback!")
     with peripherals_state.lock:
         peripherals_state.body_vel = [
             msg.twist.twist.linear.x,
@@ -198,7 +128,7 @@ def realsense_vel_callback(msg: Odometry, params: PeripheralState):
         ]
         peripherals_state.realsense_last_time = time.time()
         print(peripherals_state.realsense_last_time)
-        print('               UPDATE !! REALSENSE!!!!')
+        print("               UPDATE !! REALSENSE!!!!")
 
 
 def realsense_gyro_callback(msg: Imu, params: PeripheralState):
@@ -264,15 +194,15 @@ class CanCommunication(Node):
         robot_command: RobotCommand,
         peripherals_state: PeripheralState,
     ):
-        super().__init__('can_communication')
+        super().__init__("can_communication")
         self.robot_state = robot_state
         self.robot_command = robot_command
         self.peripherals_state = peripherals_state
 
-        print('Init can node')
+        print("Init can node")
 
-        self.device = 'can0'
-        self.motor_type = 'AK70_10_V1p1'
+        self.device = "can0"
+        self.motor_type = "AK70_10_V1p1"
         self.n_motor = 12
         self.motors = [
             CanMotorController(
@@ -284,13 +214,13 @@ class CanCommunication(Node):
             for i in range(self.n_motor)
         ]
 
-        print('Enabling Motors...')
+        print("Enabling Motors...")
         for i, motor in enumerate(self.motors):
             pos, vel, cur, tem = motor.enable_motor()
             print(
                 (
-                    'Enabling Motor {} [Status] Pos: {:.3f}, Vel: {:.3f}, '
-                    'Cur: {:.3f}, Temp: {:.3f}'
+                    "Enabling Motor {} [Status] Pos: {:.3f}, Vel: {:.3f}, "
+                    "Cur: {:.3f}, Temp: {:.3f}"
                 ).format(P.JOINT_NAME[i], pos, vel, cur, tem)
             )
             with self.robot_state.lock:
@@ -298,13 +228,13 @@ class CanCommunication(Node):
                 self.robot_state.velocity[i] = vel
                 self.robot_state.current[i] = cur
                 self.robot_state.temperature[i] = tem
-        print('Finish enabling motors!')
+        print("Finish enabling motors!")
         self.state_pub = MeviusLogPub()
         self.jointstate_pub = JointStatePub()
         # state_pub = rospy.Publisher('mevius_log', MeviusLog, queue_size=2)
         # jointstate_pub = rospy.Publisher('joint_states', JointState, queue_size=2)
 
-        print('Setting Initial Offset...')
+        print("Setting Initial Offset...")
         for i, motor in enumerate(self.motors):
             motor.set_angle_offset(P.STANDBY_ANGLE[i], deg=False)
             # motor.set_angle_range(joint_params[i][0], joint_params[i][1], deg=False)
@@ -313,7 +243,7 @@ class CanCommunication(Node):
             self.robot_state.angle = P.STANDBY_ANGLE[:]
 
         with self.robot_command.lock:
-            self.robot_command.command = 'STANDBY'
+            self.robot_command.command = "STANDBY"
             self.robot_command.angle = P.STANDBY_ANGLE[:]
             self.robot_command.initial_angle = P.STANDBY_ANGLE[:]
             self.robot_command.final_angle = P.STANDBY_ANGLE[:]
@@ -346,11 +276,12 @@ class CanCommunication(Node):
         for i, motor in enumerate(self.motors):
             try:
                 pos, vel, cur, tem = motor.send_rad_command(
-                    ref_angle[i], ref_velocity[i], ref_kp[i], ref_kd[i], ref_torque[i])
+                    ref_angle[i], ref_velocity[i], ref_kp[i], ref_kd[i], ref_torque[i]
+                )
             except Exception as e:
                 self.error_count[i] += 1
                 print(
-                    '# Can Reciver is Failed for {}, ({})'.format(
+                    "# Can Reciver is Failed for {}, ({})".format(
                         P.JOINT_NAME[i], self.error_count[i]
                     )
                 )
@@ -428,29 +359,23 @@ class KeyboardJoy(Node):
             two_pushed = peripherals_state.virtual[4]
 
         if one_pushed == 1:
-            command_callback(
-                "STANDBY-STANDUP",
-                self.robot_state,
-                self.robot_command)
+            command_callback("STANDBY-STANDUP", self.robot_state, self.robot_command)
         elif two_pushed == 1:
-            command_callback(
-                "STANDUP-WALK",
-                self.robot_state,
-                self.robot_command)
+            command_callback("STANDUP-WALK", self.robot_state, self.robot_command)
 
 
 class MeviusLogPub(Node):
     def __init__(self):
-        super().__init__('mevius_log')
-        self.pub = self.create_publisher(MeviusLog, '/mevius_log', 2)
-        print('Init mevius_log node')
+        super().__init__("mevius_log")
+        self.pub = self.create_publisher(MeviusLog, "/mevius_log", 2)
+        print("Init mevius_log node")
 
 
 class JointStatePub(Node):
     def __init__(self):
-        super().__init__('joint_states')
-        self.pub = self.create_publisher(JointState, '/joint_states', 2)
-        print('Init joint_states node')
+        super().__init__("joint_states")
+        self.pub = self.create_publisher(JointState, "/joint_states", 2)
+        print("Init joint_states node")
 
 
 class SimCommunication(Node):
@@ -460,15 +385,15 @@ class SimCommunication(Node):
         robot_command: RobotCommand,
         peripherals_state: PeripheralState,
     ):
-        super().__init__('sim_communication')
+        super().__init__("sim_communication")
         self.robot_state = robot_state
         self.robot_command = robot_command
         self.peripherals_state = peripherals_state
 
-        print('Init sim node')
+        print("Init sim node")
         # import tf
 
-        xml_path = os.path.abspath('src/mevius/models/scene.xml')
+        xml_path = os.path.abspath("src/mevius/models/scene.xml")
         self.model = mujoco.MjModel.from_xml_path(xml_path)
         self.data = mujoco.MjData(self.model)
         self.viewer = mujoco_viewer.MujocoViewer(self.model, self.data)
@@ -481,16 +406,14 @@ class SimCommunication(Node):
         ]
         with self.robot_state.lock:
             for i, name in enumerate(P.JOINT_NAME):
-                idx = mujoco.mj_name2id(
-                    self.model, mujoco.mjtObj.mjOBJ_ACTUATOR, name)
+                idx = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_ACTUATOR, name)
                 self.robot_state.angle[i] = self.data.qpos[7 + idx]
                 self.robot_state.velocity[i] = self.data.qvel[6 + idx]
                 self.robot_state.current[i] = 0.0
                 self.robot_state.temperature[i] = 25.0
 
         for i, name in enumerate(P.JOINT_NAME):
-            idx = mujoco.mj_name2id(
-                self.model, mujoco.mjtObj.mjOBJ_ACTUATOR, name)
+            idx = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_ACTUATOR, name)
             self.data.ctrl[idx] = P.STANDBY_ANGLE[i]
 
         self.state_pub = MeviusLogPub()
@@ -502,7 +425,7 @@ class SimCommunication(Node):
             self.robot_state.angle = P.STANDBY_ANGLE[:]
 
         with self.robot_command.lock:
-            self.robot_command.command = 'STANDBY'
+            self.robot_command.command = "STANDBY"
             self.robot_command.angle = P.STANDBY_ANGLE[:]
             self.robot_command.initial_angle = P.STANDBY_ANGLE[:]
             self.robot_command.final_angle = P.STANDBY_ANGLE[:]
@@ -520,7 +443,7 @@ class SimCommunication(Node):
 
         self.viewer.cam.type = mujoco.mjtCamera.mjCAMERA_TRACKING
         self.viewer.cam.trackbodyid = mujoco.mj_name2id(
-            self.model, mujoco.mjtObj.mjOBJ_BODY, 'base_link'
+            self.model, mujoco.mjtObj.mjOBJ_BODY, "base_link"
         )
 
         msg = MeviusLog()
@@ -581,8 +504,9 @@ class SimCommunication(Node):
         base_quat_in_world = np.array(
             [self.data.qpos[4], self.data.qpos[5], self.data.qpos[6], self.data.qpos[3]]
         )
-        base_lin_vel_in_base = (Rotation.from_quat(
-            base_quat_in_world).inv().apply(base_lin_vel_in_world))
+        base_lin_vel_in_base = (
+            Rotation.from_quat(base_quat_in_world).inv().apply(base_lin_vel_in_world)
+        )
         odom_msg.twist.twist.linear.x = base_lin_vel_in_base[0]
         odom_msg.twist.twist.linear.y = base_lin_vel_in_base[1]
         odom_msg.twist.twist.linear.z = base_lin_vel_in_base[2]
@@ -628,12 +552,12 @@ class SimCommunication(Node):
 
 class CameraOdom(Node):
     def __init__(self, peripheral_state):
-        super().__init__('odom')
+        super().__init__("odom")
 
         # qos_profile = QoSProfile(reliability=ReliabilityPolicy.BEST_EFFORT)
         self.subscription = self.create_subscription(
             Odometry,
-            '/camera/pose/sample',
+            "/camera/pose/sample",
             partial(realsense_vel_callback, params=(peripheral_state)),
             QoSProfile(depth=10, reliability=ReliabilityPolicy.BEST_EFFORT),
         )
@@ -642,11 +566,11 @@ class CameraOdom(Node):
 
 class CameraGyro(Node):
     def __init__(self, peripheral_state):
-        super().__init__('gyro')
+        super().__init__("gyro")
 
         self.subscription = self.create_subscription(
             Imu,
-            'camera/gyro/sample',
+            "camera/gyro/sample",
             partial(realsense_gyro_callback, params=(peripheral_state)),
             QoSProfile(depth=10, reliability=ReliabilityPolicy.BEST_EFFORT),
         )
@@ -655,11 +579,11 @@ class CameraGyro(Node):
 
 class CameraAccel(Node):
     def __init__(self, peripheral_state):
-        super().__init__('accel')
+        super().__init__("accel")
 
         self.subscription = self.create_subscription(
             Imu,
-            'camera/accel/sample',
+            "camera/accel/sample",
             partial(realsense_acc_callback, params=(peripheral_state)),
             QoSProfile(depth=10, reliability=ReliabilityPolicy.BEST_EFFORT),
         )
@@ -668,7 +592,7 @@ class CameraAccel(Node):
 
 class MeviusCommand(Node):
     def __init__(self, robot_state: RobotState, robot_command: RobotCommand):
-        super().__init__('mevius_command')
+        super().__init__("mevius_command")
         # self.subscription=self.create_subscription(String, ros_command_callback, (robot_state, robot_command), queue_size=1))
         # rospy.Subscriber('/mevius_command', String, ros_command_callback, (robot_state, robot_command), queue_size=1)
 
@@ -678,12 +602,8 @@ class MeviusCommand(Node):
         # サブスクライバーを作成
         self.subscription = self.create_subscription(
             String,  # メッセージの型
-            'mevius_command',  # トピック名
-            partial(
-                self.ros_command_callback,
-                params=(
-                    robot_state,
-                    robot_command)),
+            "mevius_command",  # トピック名
+            partial(self.ros_command_callback, params=(robot_state, robot_command)),
             1,  # キューサイズ
         )
         self.subscription  # サブスクライバーを保持（破棄されないように）
@@ -692,7 +612,7 @@ class MeviusCommand(Node):
         self, msg: String, params: Tuple[RobotState, RobotCommand]
     ):
         robot_state, robot_command = params
-        print('Received ROS Command: {}'.format(msg.data))
+        print("Received ROS Command: {}".format(msg.data))
         command_callback(msg.data, robot_state, robot_command)
 
 
@@ -703,21 +623,20 @@ class MainController(Node):
         robot_command: RobotCommand,
         peripherals_state: PeripheralState,
     ):
-        super().__init__('main_controller')
-        print('Init main_controller Node')
+        super().__init__("main_controller")
+        print("Init main_controller Node")
         self.controlrate = 50.0
-        self.timer = self.create_timer(
-            1.0 / self.controlrate, self.timer_callback)
+        self.timer = self.create_timer(1.0 / self.controlrate, self.timer_callback)
         self.robot_state = robot_state
         self.robot_command = robot_command
         self.peripherals_state = peripherals_state
         policy_path = os.path.join(
-            get_package_share_directory('mevius'), 'models/policy_slow.pt'
+            get_package_share_directory("mevius"), "models/policy_slow.pt"
         )
-        self.policy = read_torch_policy(policy_path).to('cpu')
+        self.policy = read_torch_policy(policy_path).to("cpu")
 
         urdf_fullpath = os.path.join(
-            get_package_share_directory('mevius'), 'models/mevius.urdf'
+            get_package_share_directory("mevius"), "models/mevius.urdf"
         )
         self.joint_params = get_urdf_joint_params(urdf_fullpath, P.JOINT_NAME)
 
@@ -729,7 +648,7 @@ class MainController(Node):
         # while rclpy.ok():
         with self.robot_command.lock:
             command = self.robot_command.command
-        if command in ['STANDBY', 'STANDUP', 'DEBUG']:
+        if command in ["STANDBY", "STANDUP", "DEBUG"]:
             with self.robot_command.lock:
                 self.robot_command.remaining_time -= 1.0 / self.controlrate
                 self.robot_command.remaining_time = max(
@@ -750,7 +669,7 @@ class MainController(Node):
                             self.robot_command.final_angle,
                         )
                     ]
-        elif command in ['WALK']:
+        elif command in ["WALK"]:
             with self.robot_command.lock:
                 self.robot_command.remaining_time -= 1.0 / self.controlrate
                 self.robot_command.remaining_time = max(
@@ -797,31 +716,28 @@ class MainController(Node):
                         [[0.0, 0.0, 0.0, 0.0]], dtype=torch.float, requires_grad=False
                     )
 
-                print('High Level Commands: {}'.format(commands))
+                print("High Level Commands: {}".format(commands))
 
         # for safety
-        if command in ['WALK']:
+        if command in ["WALK"]:
             # no realsense
             with self.peripherals_state.lock:
                 if self.peripherals_state.realsense_last_time is None:
                     self.is_safe = False
-                    print('No Connection to Realsense. PD gains become 0.')
+                    print("No Connection to Realsense. PD gains become 0.")
                 if (self.peripherals_state.realsense_last_time is not None) and (
                     time.time() - self.peripherals_state.realsense_last_time > 0.1
                 ):
-                    print('Realsense data is too old. PD gains become 0.')
+                    print("Realsense data is too old. PD gains become 0.")
                     self.is_safe = False
             # falling down
-            if self.is_safe and (
-                Rotation.from_quat(base_quat).as_matrix()[
-                    2,
-                    2] < 0.6):
+            if self.is_safe and (Rotation.from_quat(base_quat).as_matrix()[2, 2] < 0.6):
                 self.is_safe = False
-                print('Robot is almost fell down. PD gains become 0.')
+                print("Robot is almost fell down. PD gains become 0.")
 
             # self.is_safe=True
             if not self.is_safe:
-                print('Robot is not safe. Please reboot the robot.')
+                print("Robot is not safe. Please reboot the robot.")
                 with self.robot_command.lock:
                     self.robot_command.kp = [0.0] * 12
                     self.robot_command.kd = [0.0] * 12
@@ -830,7 +746,7 @@ class MainController(Node):
                 # rate.sleep()
                 # continue
 
-        if command in ['WALK']:
+        if command in ["WALK"]:
             with self.robot_state.lock:
                 dof_pos = self.robot_state.angle[:]
                 dof_vel = self.robot_state.velocity[:]
@@ -847,12 +763,8 @@ class MainController(Node):
             actions = get_policy_output(self.policy, obs)
             scaled_actions = P.control.action_scale * actions
 
-        if command in ['WALK']:
-            ref_angle = [
-                a + b for a,
-                b in zip(
-                    scaled_actions,
-                    P.DEFAULT_ANGLE[:])]
+        if command in ["WALK"]:
+            ref_angle = [a + b for a, b in zip(scaled_actions, P.DEFAULT_ANGLE[:])]
             with self.robot_state.lock:
                 for i in range(len(ref_angle)):
                     if (
@@ -864,7 +776,7 @@ class MainController(Node):
                             min(ref_angle[i], self.joint_params[i][1] - 0.1),
                         )
                         print(
-                            '# Joint {} out of range: {:.3f}'.format(
+                            "# Joint {} out of range: {:.3f}".format(
                                 P.JOINT_NAME[i], self.robot_state.angle[i]
                             )
                         )
@@ -876,8 +788,8 @@ class MainController(Node):
 
 class Mevius(Node):
     def __init__(self):
-        super().__init__('mevius')
-        print('Init Mevius Node')
+        super().__init__("mevius")
+        print("Init Mevius Node")
         self.timer = self.create_timer(1, self.timer_callback)
 
     def timer_callback(self):
@@ -891,10 +803,10 @@ def main():
     # print(sys.path)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--sim', action='store_true', help='do simulation')
+    parser.add_argument("--sim", action="store_true", help="do simulation")
     args = parser.parse_args()
 
-    print('Hello mevius!!')
+    print("Hello mevius!!")
     rclpy.init()
     try:
         mevius = Mevius()
@@ -903,13 +815,11 @@ def main():
         peripheral_state = PeripheralState()
         robot_command = RobotCommand()
 
-        main_controller = MainController(
-            robot_state, robot_command, peripheral_state)
+        main_controller = MainController(robot_state, robot_command, peripheral_state)
 
         mevius_command = MeviusCommand(robot_state, robot_command)
 
-        keyboard_joy = KeyboardJoy(
-            robot_state, robot_command, peripheral_state)
+        keyboard_joy = KeyboardJoy(robot_state, robot_command, peripheral_state)
         camera_odom = CameraOdom(peripheral_state)
         camera_gyro = CameraGyro(peripheral_state)
         camera_accel = CameraAccel(peripheral_state)
@@ -945,5 +855,5 @@ def main():
         rclpy.try_shutdown()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
