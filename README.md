@@ -23,10 +23,10 @@ From the link of RUBIK LINK V2.0, please download the upper computer installatio
 
 # Software Dependencies
 Please install the following dependencies.
-- [ROS](https://www.ros.org/)
-- [realsense-ros](https://github.com/IntelRealSense/realsense-ros/tree/ros1-legacy)
-- [spacenav_node](https://wiki.ros.org/spacenav_node) # optional
-- [virtual_joystick](https://github.com/aquahika/rqt_virtual_joystick) # optional
+- [ROS 2 Jazzy](https://docs.ros.org/en/jazzy/index.html)
+- [realsense-ros](https://github.com/IntelRealSense/realsense-ros)
+- [spacenav_node](https://github.com/ros-drivers/spacenav_node) # optional
+- [rqt_virtual_joystick](https://github.com/ros-visualization/rqt_virtual_joystick) # optional
 - [urdfdom-py](https://github.com/ros/urdf_parser_py)
 - [legged_gym](https://github.com/leggedrobotics/legged_gym)
 
@@ -43,8 +43,8 @@ mkdir -p ~/mevius_ws/src
 cd ~/mevius_ws/src
 git clone git@github.com:haraduka/mevius.git
 cd ..
-catkin build
-source ~/mevius_ws/devel/setup.bash
+colcon build
+source ~/mevius_ws/install/setup.bash
 ```
 
 # Reinforcement Learning
@@ -71,36 +71,35 @@ cp logs/flat_mevius/( log_dir )/exported/policies/policy_1.pt ../mevius/models/p
 # Usage
 Please test the installation by running the following command.
 ```
-python3 scripts/mevius_utils.py
+python3 mevius/mevius_utils/mevius_utils.py
 ```
 Please test the motors by running the following command.
 ```
 ./bin/can_setup.sh
-python scripts/tmotor_test.py --ids 1 --task sense
+python3 mevius/tmotor_test.py --ids 1 --task sense
 ```
 Please test the real robot by running the following command.
 ```
 # in the PC of MEVIUS
-roscore
-roslaunch realsense2_camera rs_t265.launch
+ros2 launch realsense2_camera rs_t265.launch.py
 ./bin/can_setup.sh
-python3 scripts/mevius_main.py
+ros2 run mevius mevius_main
 
 # in your local PC
-roslaunch spacenav_node classic.launch
+ros2 launch spacenav_node spacenav_node.launch.py
 
 # Left Click: SITDOWN/STANDUP, Right Click: STANDUP/WALK
 
 # if you want to simulate the robot in mujoco
-python3 scripts/mevius_main.py --sim
+ros2 run mevius mevius_main --sim
 
 # please press D to turn off every-step rendering in mujoco viewer
 ```
 
 # Acknowledgements
-- scripts/tmotor_lib.py is from [mini-cheetah-tmotor-python-can](https://github.com/dfki-ric-underactuated-lab/mini-cheetah-tmotor-python-can)
-- scripts/isaacgym_torch_utils.py is from [IsaacGym](https://developer.nvidia.com/isaac-gym)
-- scripts/legged_gym_math.py is from [LeggedGym](https://github.com/leggedrobotics/legged_gym)
+- mevius/tmotor_lib/tmotor_lib.py is from [mini-cheetah-tmotor-python-can](https://github.com/dfki-ric-underactuated-lab/mini-cheetah-tmotor-python-can)
+- mevius/mevius_utils/legged_gym_math/isaacgym_torch_utils/isaacgym_torch_utils.py is from [IsaacGym](https://developer.nvidia.com/isaac-gym)
+- mevius/mevius_utils/legged_gym_math/legged_gym_math.py is from [LeggedGym](https://github.com/leggedrobotics/legged_gym)
 
 # Citation
 ```
