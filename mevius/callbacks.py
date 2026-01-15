@@ -35,7 +35,7 @@ def command_callback(
                         robot_command.final_angle = P.STANDBY_ANGLE[:]
                         robot_command.interpolating_time = 3.0
                         robot_command.remaining_time = robot_command.interpolating_time
-    elif command == "STANDUP-WALK":
+    elif command == 'STANDUP-WALK':
         with robot_command.lock:
             if robot_command.remaining_time < 0.1:
                 if prev_command == 'STANDUP':
@@ -75,7 +75,9 @@ def command_callback(
         robot_command.command = 'WALK'
 
     with robot_command.lock:
-        print('Command changed from {} to {}'.format(prev_command, robot_command.command))
+        print(
+            'Command changed from {} to {}'.format(prev_command, robot_command.command)
+        )
 
 
 def realsense_vel_callback(msg: Odometry, params: PeripheralState):

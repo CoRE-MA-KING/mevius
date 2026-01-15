@@ -12,7 +12,7 @@ from ..types import RobotCommand, RobotState
 
 class MeviusCommand(Node):
     def __init__(self, robot_state: RobotState, robot_command: RobotCommand):
-        super().__init__("mevius_command")
+        super().__init__('mevius_command')
         # self.subscription=self.create_subscription(String, ros_command_callback, (robot_state, robot_command), queue_size=1))
         # rospy.Subscriber('/mevius_command', String, ros_command_callback, (robot_state, robot_command), queue_size=1)
 
@@ -22,7 +22,7 @@ class MeviusCommand(Node):
         # サブスクライバーを作成
         self.subscription = self.create_subscription(
             String,  # メッセージの型
-            "mevius_command",  # トピック名
+            'mevius_command',  # トピック名
             partial(self.ros_command_callback, params=(robot_state, robot_command)),
             1,  # キューサイズ
         )
@@ -32,5 +32,5 @@ class MeviusCommand(Node):
         self, msg: String, params: Tuple[RobotState, RobotCommand]
     ):
         robot_state, robot_command = params
-        print("Received ROS Command: {}".format(msg.data))
+        print('Received ROS Command: {}'.format(msg.data))
         command_callback(msg.data, robot_state, robot_command)

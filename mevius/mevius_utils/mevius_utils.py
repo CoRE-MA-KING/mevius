@@ -198,10 +198,10 @@ def get_policy_output(policy, obs):
 #     print(get_policy_output(policy, obs))
 
 
-if __name__ == "__main__":
-    print("# test_get_urdf_joint_params")
+if __name__ == '__main__':
+    print('# test_get_urdf_joint_params')
     test_get_urdf_joint_params()
-    print("# test_read_torch_policy")
+    print('# test_read_torch_policy')
     test_read_torch_policy()
     # print("# test_get_policy_output")
     # test_get_policy_output()

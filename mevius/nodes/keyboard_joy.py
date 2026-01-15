@@ -16,13 +16,13 @@ class KeyboardJoy(Node):
         robot_command: RobotCommand,
         peripheral_state: PeripheralState,
     ):
-        super().__init__("key_joy_node")
+        super().__init__('key_joy_node')
         self.robot_state = robot_state
         self.robot_command = robot_command
         self.peripheral_state = peripheral_state
         self.subscription = self.create_subscription(
             Joy,
-            "/joy",
+            '/joy',
             partial(self.virtual_joy_callback, params=(self.peripheral_state)),
             1,
         )
@@ -44,6 +44,6 @@ class KeyboardJoy(Node):
             two_pushed = peripherals_state.virtual[4]
 
         if one_pushed == 1:
-            command_callback("STANDBY-STANDUP", self.robot_state, self.robot_command)
+            command_callback('STANDBY-STANDUP', self.robot_state, self.robot_command)
         elif two_pushed == 1:
-            command_callback("STANDUP-WALK", self.robot_state, self.robot_command)
+            command_callback('STANDUP-WALK', self.robot_state, self.robot_command)

@@ -5,8 +5,9 @@ from mevius_massage.msg._mevius_log import MeviusLog
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
 
-from ..types import PeripheralState, RobotCommand, RobotState
 from .publisher import JointStatePub, MeviusLogPub
+from ..types import PeripheralState, RobotCommand, RobotState
+from ..tmotor_lib import CanMotorController
 
 
 class CanCommunication(Node):
@@ -16,35 +17,35 @@ class CanCommunication(Node):
         robot_command: RobotCommand,
         peripherals_state: PeripheralState,
     ):
-        super().__init__("can_communication")
+        super().__init__('can_communication')
         self.robot_state = robot_state
         self.robot_command = robot_command
         self.peripherals_state = peripherals_state
 
-        print("Init can node")
+        print('Init can node')
 
-        self.declare_parameter("CAN_ID", [0] * 12)
-        self.declare_parameter("MOTOR_DIR", [0] * 12)
-        self.declare_parameter("JOINT_NAME", [""])
-        self.declare_parameter("STANDBY_ANGLE", [0.0] * 12)
-        self.declare_parameter("CAN_HZ", 50)
+        self.declare_parameter('CAN_ID', [0] * 12)
+        self.declare_parameter('MOTOR_DIR', [0] * 12)
+        self.declare_parameter('JOINT_NAME', [''])
+        self.declare_parameter('STANDBY_ANGLE', [0.0] * 12)
+        self.declare_parameter('CAN_HZ', 50)
 
         self.can_id = (
-            self.get_parameter("CAN_ID").get_parameter_value().integer_array_value
+            self.get_parameter('CAN_ID').get_parameter_value().integer_array_value
         )
         self.motor_dir = (
-            self.get_parameter("MOTOR_DIR").get_parameter_value().integer_array_value
+            self.get_parameter('MOTOR_DIR').get_parameter_value().integer_array_value
         )
         self.joint_name = (
-            self.get_parameter("JOINT_NAME").get_parameter_value().string_array_value
+            self.get_parameter('JOINT_NAME').get_parameter_value().string_array_value
         )
         self.standby_angle = (
-            self.get_parameter("STANDBY_ANGLE").get_parameter_value().double_array_value
+            self.get_parameter('STANDBY_ANGLE').get_parameter_value().double_array_value
         )
-        self.can_hz = self.get_parameter("CAN_HZ").get_parameter_value().integer_value
+        self.can_hz = self.get_parameter('CAN_HZ').get_parameter_value().integer_value
 
-        self.device = "can0"
-        self.motor_type = "AK70_10_V1p1"
+        self.device = 'can0'
+        self.motor_type = 'AK70_10_V1p1'
         self.n_motor = 12
         self.motors = [
             CanMotorController(
@@ -56,13 +57,13 @@ class CanCommunication(Node):
             for i in range(self.n_motor)
         ]
 
-        print("Enabling Motors...")
+        print('Enabling Motors...')
         for i, motor in enumerate(self.motors):
             pos, vel, cur, tem = motor.enable_motor()
             print(
                 (
-                    "Enabling Motor {} [Status] Pos: {:.3f}, Vel: {:.3f}, "
-                    "Cur: {:.3f}, Temp: {:.3f}"
+                    'Enabling Motor {} [Status] Pos: {:.3f}, Vel: {:.3f}, '
+                    'Cur: {:.3f}, Temp: {:.3f}'
                 ).format(self.joint_name[i], pos, vel, cur, tem)
             )
             with self.robot_state.lock:
@@ -70,13 +71,13 @@ class CanCommunication(Node):
                 self.robot_state.velocity[i] = vel
                 self.robot_state.current[i] = cur
                 self.robot_state.temperature[i] = tem
-        print("Finish enabling motors!")
+        print('Finish enabling motors!')
         self.state_pub = MeviusLogPub()
         self.jointstate_pub = JointStatePub()
         # state_pub = rospy.Publisher('mevius_log', MeviusLog, queue_size=2)
         # jointstate_pub = rospy.Publisher('joint_states', JointState, queue_size=2)
 
-        print("Setting Initial Offset...")
+        print('Setting Initial Offset...')
         for i, motor in enumerate(self.motors):
             motor.set_angle_offset(self.standby_angle[i], deg=False)
             # motor.set_angle_range(joint_params[i][0], joint_params[i][1], deg=False)
@@ -85,7 +86,7 @@ class CanCommunication(Node):
             self.robot_state.angle = self.standby_angle
 
         with self.robot_command.lock:
-            self.robot_command.command = "STANDBY"
+            self.robot_command.command = 'STANDBY'
             self.robot_command.angle = self.standby_angle
             self.robot_command.initial_angle = self.standby_angle
             self.robot_command.final_angle = self.standby_angle
@@ -123,7 +124,7 @@ class CanCommunication(Node):
             except Exception as e:
                 self.error_count[i] += 1
                 print(
-                    "# Can Reciver is Failed for {}, ({})".format(
+                    '# Can Reciver is Failed for {}, ({})'.format(
                         self.joint_name[i], self.error_count[i]
                     )
                 )

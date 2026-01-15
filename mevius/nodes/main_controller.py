@@ -24,47 +24,47 @@ class MainController(Node):
         robot_command: RobotCommand,
         peripherals_state: PeripheralState,
     ):
-        super().__init__("main_controller", parameter_overrides=[])
-        print("Init main_controller Node")
-        self.declare_parameter("DEFAULT_ANGLE", [0.0] * 12)
-        self.declare_parameter("control.action_scale", 0.5)
-        self.declare_parameter("commands.ranges.lin_vel_x", [-0.65, 0.65])
-        self.declare_parameter("commands.ranges.lin_vel_y", [-0.4, 0.4])
-        self.declare_parameter("commands.ranges.ang_vel_yaw", [-0.7, 0.7])
-        self.declare_parameter("commands.ranges.heading", [-3.14, 3.14])
-        self.declare_parameter("commands.heading_command", False)
+        super().__init__('main_controller', parameter_overrides=[])
+        print('Init main_controller Node')
+        self.declare_parameter('DEFAULT_ANGLE', [0.0] * 12)
+        self.declare_parameter('control.action_scale', 0.5)
+        self.declare_parameter('commands.ranges.lin_vel_x', [-0.65, 0.65])
+        self.declare_parameter('commands.ranges.lin_vel_y', [-0.4, 0.4])
+        self.declare_parameter('commands.ranges.ang_vel_yaw', [-0.7, 0.7])
+        self.declare_parameter('commands.ranges.heading', [-3.14, 3.14])
+        self.declare_parameter('commands.heading_command', False)
 
         # Get parameters
         self.default_angle = (
-            self.get_parameter("DEFAULT_ANGLE").get_parameter_value().double_array_value
+            self.get_parameter('DEFAULT_ANGLE').get_parameter_value().double_array_value
         )
         self.action_scale = (
-            self.get_parameter("control.action_scale")
+            self.get_parameter('control.action_scale')
             .get_parameter_value()
             .double_value
         )
         self.lin_vel_x_range = (
-            self.get_parameter("commands.ranges.lin_vel_x")
+            self.get_parameter('commands.ranges.lin_vel_x')
             .get_parameter_value()
             .double_array_value
         )
         self.lin_vel_y_range = (
-            self.get_parameter("commands.ranges.lin_vel_y")
+            self.get_parameter('commands.ranges.lin_vel_y')
             .get_parameter_value()
             .double_array_value
         )
         self.ang_vel_yaw_range = (
-            self.get_parameter("commands.ranges.ang_vel_yaw")
+            self.get_parameter('commands.ranges.ang_vel_yaw')
             .get_parameter_value()
             .double_array_value
         )
         self.heading_range = (
-            self.get_parameter("commands.ranges.heading")
+            self.get_parameter('commands.ranges.heading')
             .get_parameter_value()
             .double_array_value
         )
         self.heading_command = (
-            self.get_parameter("commands.heading_command")
+            self.get_parameter('commands.heading_command')
             .get_parameter_value()
             .bool_value
         )
@@ -75,12 +75,12 @@ class MainController(Node):
         self.robot_command = robot_command
         self.peripherals_state = peripherals_state
         policy_path = os.path.join(
-            get_package_share_directory("mevius"), "models/policy_slow.pt"
+            get_package_share_directory('mevius'), 'models/policy_slow.pt'
         )
-        self.policy = read_torch_policy(policy_path).to("cpu")
+        self.policy = read_torch_policy(policy_path).to('cpu')
 
         urdf_fullpath = os.path.join(
-            get_package_share_directory("mevius"), "models/mevius.urdf"
+            get_package_share_directory('mevius'), 'models/mevius.urdf'
         )
         self.joint_params = get_urdf_joint_params(
             urdf_fullpath, self.robot_command.joint_name
@@ -94,7 +94,7 @@ class MainController(Node):
         # while rclpy.ok():
         with self.robot_command.lock:
             command = self.robot_command.command
-        if command in ["STANDBY", "STANDUP", "DEBUG"]:
+        if command in ['STANDBY', 'STANDUP', 'DEBUG']:
             with self.robot_command.lock:
                 self.robot_command.remaining_time -= 1.0 / self.controlrate
                 self.robot_command.remaining_time = max(
@@ -115,7 +115,7 @@ class MainController(Node):
                             self.robot_command.final_angle,
                         )
                     ]
-        elif command in ["WALK"]:
+        elif command in ['WALK']:
             with self.robot_command.lock:
                 self.robot_command.remaining_time -= 1.0 / self.controlrate
                 self.robot_command.remaining_time = max(
@@ -161,28 +161,28 @@ class MainController(Node):
                         [[0.0, 0.0, 0.0, 0.0]], dtype=torch.float, requires_grad=False
                     )
 
-                print("High Level Commands: {}".format(commands))
+                print('High Level Commands: {}'.format(commands))
 
         # for safety
-        if command in ["WALK"]:
+        if command in ['WALK']:
             # no realsense
             with self.peripherals_state.lock:
                 if self.peripherals_state.realsense_last_time is None:
                     self.is_safe = False
-                    print("No Connection to Realsense. PD gains become 0.")
+                    print('No Connection to Realsense. PD gains become 0.')
                 if (self.peripherals_state.realsense_last_time is not None) and (
                     time.time() - self.peripherals_state.realsense_last_time > 0.1
                 ):
-                    print("Realsense data is too old. PD gains become 0.")
+                    print('Realsense data is too old. PD gains become 0.')
                     self.is_safe = False
             # falling down
             if self.is_safe and (Rotation.from_quat(base_quat).as_matrix()[2, 2] < 0.6):
                 self.is_safe = False
-                print("Robot is almost fell down. PD gains become 0.")
+                print('Robot is almost fell down. PD gains become 0.')
 
             # self.is_safe=True
             if not self.is_safe:
-                print("Robot is not safe. Please reboot the robot.")
+                print('Robot is not safe. Please reboot the robot.')
                 with self.robot_command.lock:
                     self.robot_command.kp = [0.0] * 12
                     self.robot_command.kd = [0.0] * 12
@@ -191,7 +191,7 @@ class MainController(Node):
                 # rate.sleep()
                 # continue
 
-        if command in ["WALK"]:
+        if command in ['WALK']:
             with self.robot_state.lock:
                 dof_pos = self.robot_state.angle[:]
                 dof_vel = self.robot_state.velocity[:]
@@ -210,7 +210,7 @@ class MainController(Node):
             actions = get_policy_output(self.policy, obs)
             scaled_actions = self.action_scale * actions
 
-        if command in ["WALK"]:
+        if command in ['WALK']:
             ref_angle = [a + b for a, b in zip(scaled_actions, self.default_angle)]
             with self.robot_state.lock:
                 for i in range(len(ref_angle)):
@@ -223,7 +223,7 @@ class MainController(Node):
                             min(ref_angle[i], self.joint_params[i][1] - 0.1),
                         )
                         print(
-                            "# Joint {} out of range: {:.3f}".format(
+                            '# Joint {} out of range: {:.3f}'.format(
                                 self.robot_command.joint_name[i],
                                 self.robot_state.angle[i],
                             )

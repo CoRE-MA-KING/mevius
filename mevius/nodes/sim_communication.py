@@ -1,9 +1,6 @@
 """SimCommunication node for MEVIUS."""
 
 import os
-import time
-from functools import partial
-from typing import Tuple
 
 import mujoco
 import mujoco_viewer
@@ -30,25 +27,25 @@ class SimCommunication(Node):
         robot_command: RobotCommand,
         peripherals_state: PeripheralState,
     ):
-        super().__init__("sim_communication")
+        super().__init__('sim_communication')
         self.robot_state = robot_state
         self.robot_command = robot_command
         self.peripherals_state = peripherals_state
 
-        print("Init sim node")
+        print('Init sim node')
         # import tf
 
-        self.declare_parameter("JOINT_NAME", [""])
-        self.declare_parameter("STANDBY_ANGLE", [0.0] * 12)
+        self.declare_parameter('JOINT_NAME', [''])
+        self.declare_parameter('STANDBY_ANGLE', [0.0] * 12)
 
         self.joint_name = (
-            self.get_parameter("JOINT_NAME").get_parameter_value().string_array_value
+            self.get_parameter('JOINT_NAME').get_parameter_value().string_array_value
         )
         self.standby_angle = (
-            self.get_parameter("STANDBY_ANGLE").get_parameter_value().double_array_value
+            self.get_parameter('STANDBY_ANGLE').get_parameter_value().double_array_value
         )
 
-        xml_path = os.path.abspath("src/mevius/models/scene.xml")
+        xml_path = os.path.abspath('src/mevius/models/scene.xml')
         self.model = mujoco.MjModel.from_xml_path(xml_path)
         self.data = mujoco.MjData(self.model)
         self.viewer = mujoco_viewer.MujocoViewer(self.model, self.data)
@@ -80,7 +77,7 @@ class SimCommunication(Node):
             self.robot_state.angle = self.standby_angle
 
         with self.robot_command.lock:
-            self.robot_command.command = "STANDBY"
+            self.robot_command.command = 'STANDBY'
             self.robot_command.angle = self.standby_angle
             self.robot_command.initial_angle = self.standby_angle
             self.robot_command.final_angle = self.standby_angle
@@ -98,7 +95,7 @@ class SimCommunication(Node):
 
         self.viewer.cam.type = mujoco.mjtCamera.mjCAMERA_TRACKING
         self.viewer.cam.trackbodyid = mujoco.mj_name2id(
-            self.model, mujoco.mjtObj.mjOBJ_BODY, "base_link"
+            self.model, mujoco.mjtObj.mjOBJ_BODY, 'base_link'
         )
 
         msg = MeviusLog()

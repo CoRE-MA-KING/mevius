@@ -1,9 +1,6 @@
 import argparse
-import select
-import sys
 import time
 
-import numpy as np
 from tmotor_lib import CanMotorController
 
 
@@ -18,34 +15,34 @@ def setZeroPosition(motor):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--device", "-d", type=str, default="can0", help="can interface name"
+        '--device', '-d', type=str, default='can0', help='can interface name'
     )
     parser.add_argument(
-        "--ids", "-i", type=int, nargs="+", default=None, help="motor ids to control"
+        '--ids', '-i', type=int, nargs='+', default=None, help='motor ids to control'
     )
     parser.add_argument(
-        "--kp", type=float, default=30.0, help="p gain for position control"
+        '--kp', type=float, default=30.0, help='p gain for position control'
     )
     parser.add_argument(
-        "--kd", type=float, default=1.0, help="d gain for position control"
+        '--kd', type=float, default=1.0, help='d gain for position control'
     )
     args = parser.parse_args()
 
-    print("# using Socket {} for can communication".format(args.device))
-    print("# motor ids: {}".format(args.ids))
-    assert args.ids is not None, "please input motor ids"
+    print('# using Socket {} for can communication'.format(args.device))
+    print('# motor ids: {}'.format(args.ids))
+    assert args.ids is not None, 'please input motor ids'
 
     ids = args.ids
     motors = {}
     for id in ids:
         motor_dir = 1
-        motors[id] = CanMotorController(args.device, id, motor_dir, "AK70_10_V1p1")
+        motors[id] = CanMotorController(args.device, id, motor_dir, 'AK70_10_V1p1')
 
-    print("Enabling Motors..")
+    print('Enabling Motors..')
     for motor_id, motor_controller in motors.items():
         pos, vel, cur, tem = motor_controller.enable_motor()
         print(
-            "Motor {} Status: Pos: {}, Vel: {}, Torque: {}, Temp: {}".format(
+            'Motor {} Status: Pos: {}, Vel: {}, Torque: {}, Temp: {}'.format(
                 motor_id, pos, vel, cur, tem
             )
         )
@@ -73,7 +70,7 @@ def main():
             )
             print(deg)
             print(
-                "Moving Motor {} Position: {}, Velocity: {}, Torque: {}, Temp: {}".format(
+                'Moving Motor {} Position: {}, Velocity: {}, Torque: {}, Temp: {}'.format(
                     motor_id, pos, vel, cur, tem
                 )
             )
@@ -81,16 +78,16 @@ def main():
 
     time.sleep(1)
 
-    print("Disabling Motors...")
+    print('Disabling Motors...')
     for motor_id, motor_controller in motors.items():
         pos, vel, cur, tem = motor_controller.disable_motor()
         time.sleep(0.2)
         print(
-            "Motor {} Status: Pos: {}, Vel: {}, Torque: {}".format(
+            'Motor {} Status: Pos: {}, Vel: {}, Torque: {}'.format(
                 motor_id, pos, vel, cur
             )
         )
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

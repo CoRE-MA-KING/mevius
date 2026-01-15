@@ -34,7 +34,7 @@ class PeripheralState:
 
 
 ModeCommand = Literal[
-    "STANDBY", "STANDBY-STANDUP", "STANDUP", "STANDUP-WALK", "WALK", "DEBUG"
+    'STANDBY', 'STANDBY-STANDUP', 'STANDUP', 'STANDUP-WALK', 'WALK', 'DEBUG'
 ]
 
 
@@ -57,7 +57,7 @@ class RobotCommand:
         assert len(self.kd) == n_motor
         self.torque = [0.0] * n_motor
 
-        self.command = "STANDBY"
+        self.command = 'STANDBY'
         self.initial_angle = [0.0] * n_motor
         self.final_angle = [0.0] * n_motor
         self.interpolating_time = 0.0
