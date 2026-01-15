@@ -21,15 +21,15 @@ def command_callback(
     if command == 'STANDBY-STANDUP':
         with robot_command.lock:
             if robot_command.remaining_time < 0.1:
-                if prev_command == "STANDBY":
-                    robot_command.command = "STANDUP"
+                if prev_command == 'STANDBY':
+                    robot_command.command = 'STANDUP'
                     with robot_state.lock:
                         robot_command.initial_angle = robot_state.angle[:]
                         robot_command.final_angle = P.DEFAULT_ANGLE[:]
                         robot_command.interpolating_time = 3.0
                         robot_command.remaining_time = robot_command.interpolating_time
-                elif prev_command == "STANDUP":
-                    robot_command.command = "STANDBY"
+                elif prev_command == 'STANDUP':
+                    robot_command.command = 'STANDBY'
                     with robot_state.lock:
                         robot_command.initial_angle = robot_state.angle[:]
                         robot_command.final_angle = P.STANDBY_ANGLE[:]
@@ -38,51 +38,49 @@ def command_callback(
     elif command == "STANDUP-WALK":
         with robot_command.lock:
             if robot_command.remaining_time < 0.1:
-                if prev_command == "STANDUP":
-                    robot_command.command = "WALK"
+                if prev_command == 'STANDUP':
+                    robot_command.command = 'WALK'
                     robot_command.interpolating_time = 3.0
                     robot_command.remaining_time = robot_command.interpolating_time
-                elif prev_command == "WALK":
-                    robot_command.command = "STANDUP"
+                elif prev_command == 'WALK':
+                    robot_command.command = 'STANDUP'
                     with robot_state.lock:
                         robot_command.initial_angle = robot_state.angle[:]
                         robot_command.final_angle = P.DEFAULT_ANGLE[:]
                         robot_command.interpolating_time = 3.0
                         robot_command.remaining_time = robot_command.interpolating_time
-    elif command == "STANDBY":
+    elif command == 'STANDBY':
         with robot_command.lock:
-            robot_command.command = "STANDBY"
+            robot_command.command = 'STANDBY'
             with robot_state.lock:
                 robot_command.initial_angle = robot_state.angle[:]
                 robot_command.final_angle = P.STANDBY_ANGLE[:]
                 robot_command.interpolating_time = 3.0
                 robot_command.remaining_time = robot_command.interpolating_time
-    elif command == "STANDUP":
-        robot_command.command = "STANDUP"
+    elif command == 'STANDUP':
+        robot_command.command = 'STANDUP'
         with robot_state.lock:
             robot_command.initial_angle = robot_state.angle[:]
             robot_command.final_angle = P.DEFAULT_ANGLE[:]
             robot_command.interpolating_time = 3.0
             robot_command.remaining_time = robot_command.interpolating_time
-    elif command == "DEBUG":
-        robot_command.command = "DEBUG"
+    elif command == 'DEBUG':
+        robot_command.command = 'DEBUG'
         with robot_state.lock:
             robot_command.initial_angle = robot_state.angle[:]
             robot_command.final_angle = P.DEBUG_ANGLE[:]
             robot_command.interpolating_time = 3.0
             robot_command.remaining_time = robot_command.interpolating_time
-    elif prev_command == "STANDUP" and command == "WALK":
-        robot_command.command = "WALK"
+    elif prev_command == 'STANDUP' and command == 'WALK':
+        robot_command.command = 'WALK'
 
     with robot_command.lock:
-        print(
-            "Command changed from {} to {}".format(prev_command, robot_command.command)
-        )
+        print('Command changed from {} to {}'.format(prev_command, robot_command.command))
 
 
 def realsense_vel_callback(msg: Odometry, params: PeripheralState):
     peripherals_state = params
-    print("realsense vel callback!")
+    print('realsense vel callback!')
     with peripherals_state.lock:
         peripherals_state.body_vel = [
             msg.twist.twist.linear.x,
@@ -98,7 +96,7 @@ def realsense_vel_callback(msg: Odometry, params: PeripheralState):
         ]
         peripherals_state.realsense_last_time = time.time()
         print(peripherals_state.realsense_last_time)
-        print("               UPDATE !! REALSENSE!!!!")
+        print('               UPDATE !! REALSENSE!!!!')
 
 
 def realsense_gyro_callback(msg: Imu, params: PeripheralState):
