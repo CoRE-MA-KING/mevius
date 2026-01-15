@@ -20,7 +20,7 @@ setup(
             glob("models/meshes/*"),
         ),
     ],
-    install_requires=["setuptools"],
+    install_requires=["setuptools", "torch"],
     zip_safe=True,
     maintainer="ma-king",
     maintainer_email="ma-king@todo.todo",

@@ -19,9 +19,9 @@ def quat_apply_yaw(quat, vec):
 
 
 def wrap_to_pi(angles):
-    angles %= 2 * np.pi
-    angles -= 2 * np.pi * (angles > np.pi)
-    return angles
+    angles_mod = angles % (2 * torch.pi)
+    angles_mod = torch.where(angles_mod > torch.pi, angles_mod - 2 * torch.pi, angles_mod)
+    return angles_mod
 
 
 # @ torch.jit.script

@@ -19,12 +19,19 @@
   <exec_depend>rosidl_default_runtime</exec_depend>
   <exec_depend>std_msgs</exec_depend>
 
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+
   <depend>roslaunch</depend>
   <depend>robot_state_publisher</depend>
   <depend>rviz</depend>
   <depend>joint_state_publisher_gui</depend>
   <depend>gazebo</depend>
-  <depend>mevius_massage2</depend>
+  <depend>mevius_massage</depend>
+  <depend>torch</depend>
+  <depend>urdf_parser_py</depend>
+  <depend>bitstring</depend>
 
   <export>
 <!--    <build_type>ament_cmake</build_type>
