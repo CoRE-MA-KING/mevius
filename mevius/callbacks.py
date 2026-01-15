@@ -12,13 +12,13 @@ from .types import ModeCommand, PeripheralState, RobotCommand, RobotState
 def command_callback(
     command: ModeCommand, robot_state: RobotState, robot_command: RobotCommand
 ):
-    print("command_callback")
+    print('command_callback')
     print([command, robot_state, robot_command])
     with robot_command.lock:
         prev_command = robot_command.command
         if not robot_command.initialized:
             pass
-    if command == "STANDBY-STANDUP":
+    if command == 'STANDBY-STANDUP':
         with robot_command.lock:
             if robot_command.remaining_time < 0.1:
                 if prev_command == "STANDBY":
@@ -104,7 +104,9 @@ def realsense_vel_callback(msg: Odometry, params: PeripheralState):
 def realsense_gyro_callback(msg: Imu, params: PeripheralState):
     peripherals_state = params
     with peripherals_state.lock:
-        # peripherals_state.body_gyro = [msg.angular_velocity.x, msg.angular_velocity.y, msg.angular_velocity.z]
+        # peripherals_state.body_gyro = [
+        #     msg.angular_velocity.x, msg.angular_velocity.y, msg.angular_velocity.z
+        # ]
         # for realsenes arrangement
         peripherals_state.body_gyro = [
             msg.angular_velocity.z,
@@ -116,7 +118,9 @@ def realsense_gyro_callback(msg: Imu, params: PeripheralState):
 def realsense_acc_callback(msg: Imu, params: PeripheralState):
     peripherals_state = params
     with peripherals_state.lock:
-        # peripherals_state.body_acc = [msg.linear_acceleration.x, msg.linear_acceleration.y, -msg.linear_acceleration.z]
+        # peripherals_state.body_acc = [
+        #     msg.linear_acceleration.x, msg.linear_acceleration.y, -msg.linear_acceleration.z
+        # ]
         # for realsenes arrangement
         peripherals_state.body_acc = [
             msg.linear_acceleration.z,
