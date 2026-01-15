@@ -1,25 +1,18 @@
 import argparse
-import os
-import threading
-import time
-from functools import partial
-from typing import Literal, Tuple
+import sys
+from typing import Tuple
 
-import mujoco
-import mujoco_viewer
 import numpy as np
 import rclpy
 import torch
-from ament_index_python.packages import get_package_share_directory
-from builtin_interfaces.msg import Time
-from mevius_massage.msg._mevius_log import MeviusLog
-from nav_msgs.msg import Odometry
 from rclpy.executors import SingleThreadedExecutor
 from rclpy.node import Node
-from rclpy.qos import QoSProfile, ReliabilityPolicy
 from scipy.spatial.transform import Rotation
+
+from ament_index_python.packages import get_package_share_directory
+from mevius_massage.msg._mevius_log import MeviusLog
+from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu, JointState, Joy
-from std_msgs.msg import String
 
 from .callbacks import (
     command_callback,
@@ -44,10 +37,10 @@ def main():
     # print(sys.path)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sim", action="store_true", help="do simulation")
+    parser.add_argument('--sim', action='store_true', help='do simulation')
     args = parser.parse_args()
 
-    print("Hello mevius!!")
+    print('Hello mevius!!')
     rclpy.init()
     try:
         mevius = Mevius()
@@ -103,5 +96,5 @@ def main():
         rclpy.try_shutdown()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
