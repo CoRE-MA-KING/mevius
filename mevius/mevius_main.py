@@ -27,89 +27,15 @@ from .callbacks import (
     realsense_gyro_callback,
     realsense_vel_callback,
 )
+from .nodes.camera_subscriber import CameraAccel, CameraGyro, CameraOdom
 from .nodes.can_communication import CanCommunication
 from .nodes.keyboard_joy import KeyboardJoy
 from .nodes.main_controller import MainController
+from .nodes.mevius_command import MeviusCommand
+from .nodes.mevius_node import Mevius
 from .nodes.publisher import JointStatePub, MeviusLogPub
 from .nodes.sim_communication import SimCommunication
 from .types import ModeCommand, PeripheralState, RobotCommand, RobotState
-
-
-class CameraOdom(Node):
-    def __init__(self, peripheral_state):
-        super().__init__("odom")
-
-        # qos_profile = QoSProfile(reliability=ReliabilityPolicy.BEST_EFFORT)
-        self.subscription = self.create_subscription(
-            Odometry,
-            "/camera/pose/sample",
-            partial(realsense_vel_callback, params=(peripheral_state)),
-            QoSProfile(depth=10, reliability=ReliabilityPolicy.BEST_EFFORT),
-        )
-        self.subscription
-
-
-class CameraGyro(Node):
-    def __init__(self, peripheral_state):
-        super().__init__("gyro")
-
-        self.subscription = self.create_subscription(
-            Imu,
-            "camera/gyro/sample",
-            partial(realsense_gyro_callback, params=(peripheral_state)),
-            QoSProfile(depth=10, reliability=ReliabilityPolicy.BEST_EFFORT),
-        )
-        self.subscription
-
-
-class CameraAccel(Node):
-    def __init__(self, peripheral_state):
-        super().__init__("accel")
-
-        self.subscription = self.create_subscription(
-            Imu,
-            "camera/accel/sample",
-            partial(realsense_acc_callback, params=(peripheral_state)),
-            QoSProfile(depth=10, reliability=ReliabilityPolicy.BEST_EFFORT),
-        )
-        self.subscription
-
-
-class MeviusCommand(Node):
-    def __init__(self, robot_state: RobotState, robot_command: RobotCommand):
-        super().__init__("mevius_command")
-        # self.subscription=self.create_subscription(String, ros_command_callback, (robot_state, robot_command), queue_size=1))
-        # rospy.Subscriber('/mevius_command', String, ros_command_callback, (robot_state, robot_command), queue_size=1)
-
-        self.robot_state = robot_state
-        self.robot_command = robot_command
-
-        # サブスクライバーを作成
-        self.subscription = self.create_subscription(
-            String,  # メッセージの型
-            "mevius_command",  # トピック名
-            partial(self.ros_command_callback, params=(robot_state, robot_command)),
-            1,  # キューサイズ
-        )
-        self.subscription  # サブスクライバーを保持（破棄されないように）
-
-    def ros_command_callback(
-        self, msg: String, params: Tuple[RobotState, RobotCommand]
-    ):
-        robot_state, robot_command = params
-        print("Received ROS Command: {}".format(msg.data))
-        command_callback(msg.data, robot_state, robot_command)
-
-
-class Mevius(Node):
-    def __init__(self):
-        super().__init__("mevius")
-        print("Init Mevius Node")
-        self.timer = self.create_timer(1, self.timer_callback)
-
-    def timer_callback(self):
-        pass
-        # print('mevius callback!')
 
 
 def main():
