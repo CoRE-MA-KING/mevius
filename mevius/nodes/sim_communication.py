@@ -190,3 +190,26 @@ class SimCommunication(Node):
         self.state_pub.pub.publish(msg)
 
         self.viewer.render()
+
+
+def main():
+    import sys
+    rclpy.init()
+    try:
+        # Create dummy instances for robot_state, robot_command, peripheral_state
+        # These will ideally be replaced by actual data passed via ROS 2 topics/services
+        # For now, we need to pass some instances to SimCommunication's constructor
+        from ..types import RobotState, RobotCommand, PeripheralState
+        robot_state = RobotState()
+        robot_command = RobotCommand(joint_name=[], stiffness={}, damping={}) # Placeholder
+        peripheral_state = PeripheralState()
+
+        sim_node = SimCommunication(robot_state, robot_command, peripheral_state)
+        rclpy.spin(sim_node)
+    except KeyboardInterrupt:
+        sys.exit(1)
+    finally:
+        rclpy.try_shutdown()
+
+if __name__ == '__main__':
+    main()

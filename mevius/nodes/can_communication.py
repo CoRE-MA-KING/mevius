@@ -158,3 +158,26 @@ class CanCommunication(Node):
         msg.ref_torque = ref_torque
 
         self.state_pub.pub.publish(msg)
+
+
+def main():
+    import sys
+    rclpy.init()
+    try:
+        # Create dummy instances for robot_state, robot_command, peripheral_state
+        # These will ideally be replaced by actual data passed via ROS 2 topics/services
+        # For now, we need to pass some instances to CanCommunication's constructor
+        from ..types import RobotState, RobotCommand, PeripheralState
+        robot_state = RobotState()
+        robot_command = RobotCommand(joint_name=[], stiffness={}, damping={}) # Placeholder
+        peripheral_state = PeripheralState()
+
+        can_node = CanCommunication(robot_state, robot_command, peripheral_state)
+        rclpy.spin(can_node)
+    except KeyboardInterrupt:
+        sys.exit(1)
+    finally:
+        rclpy.try_shutdown()
+
+if __name__ == '__main__':
+    main()

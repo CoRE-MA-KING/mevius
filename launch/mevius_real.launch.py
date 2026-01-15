@@ -17,6 +17,13 @@ def generate_launch_description():
                 name='mevius_main',
                 output='screen',
                 parameters=[params_file],
+            ),
+            Node(
+                package='mevius',
+                executable='can_communication',
+                name='can_communication',
+                output='screen',
+                parameters=[params_file],
             )
         ]
     )
