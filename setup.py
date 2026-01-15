@@ -28,6 +28,10 @@ setup(
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
-        'console_scripts': ['mevius_main = mevius.mevius_main:main'],
+        'console_scripts': [
+            'mevius_main = mevius.mevius_main:main',
+            'can_communication = mevius.nodes.can_communication:main',
+            'sim_communication = mevius.nodes.sim_communication:main',
+        ],
     },
 )
