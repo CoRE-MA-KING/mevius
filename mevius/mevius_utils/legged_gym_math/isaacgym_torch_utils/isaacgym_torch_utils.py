@@ -2,7 +2,7 @@ import numpy as np
 import torch
 
 
-def to_torch(x, dtype=torch.float, device="cuda:0", requires_grad=False):
+def to_torch(x, dtype=torch.float, device='cuda:0', requires_grad=False):
     return torch.tensor(x, dtype=dtype, device=device, requires_grad=requires_grad)
 
 
@@ -115,7 +115,7 @@ def get_basis_vector(q, v):
 def get_axis_params(value, axis_idx, x_value=0.0, dtype=np.float32, n_dims=3):
     """Construct arguments to `Vec` according to axis index."""
     zs = np.zeros((n_dims,))
-    assert axis_idx < n_dims, "the axis dim should be within the vector dimensions"
+    assert axis_idx < n_dims, 'the axis dim should be within the vector dimensions'
     zs[axis_idx] = 1.0
     params = np.where(zs == 1.0, value, zs)
     params[0] = x_value
@@ -143,7 +143,7 @@ def get_euler_xyz(q):
     # pitch (y-axis rotation)
     sinp = 2.0 * (q[:, qw] * q[:, qy] - q[:, qz] * q[:, qx])
     pitch = torch.where(
-        torch.abs(sinp) >= 1, copysign(np.pi / 2.0, sinp), torch.asin(sinp)
+        torch.abs(sinp) >= 1, copysign(torch.pi / 2.0, sinp), torch.asin(sinp)
     )
 
     # yaw (z-axis rotation)
@@ -182,7 +182,7 @@ def torch_rand_float(lower, upper, shape, device):
 
 def torch_random_dir_2(shape, device):
     # type: (Tuple[int, int], str) -> Tensor
-    angle = torch_rand_float(-np.pi, np.pi, shape, device).squeeze(-1)
+    angle = torch_rand_float(-torch.pi, torch.pi, shape, device).squeeze(-1)
     return torch.stack([torch.cos(angle), torch.sin(angle)], dim=-1)
 
 
