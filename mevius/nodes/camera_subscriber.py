@@ -17,12 +17,12 @@ from ..types import PeripheralState
 
 class CameraOdom(Node):
     def __init__(self, peripheral_state: PeripheralState):
-        super().__init__("odom")
+        super().__init__('odom')
 
         # qos_profile = QoSProfile(reliability=ReliabilityPolicy.BEST_EFFORT)
         self.subscription = self.create_subscription(
             Odometry,
-            "/camera/pose/sample",
+            '/camera/pose/sample',
             partial(realsense_vel_callback, params=(peripheral_state)),
             QoSProfile(depth=10, reliability=ReliabilityPolicy.BEST_EFFORT),
         )
@@ -31,11 +31,11 @@ class CameraOdom(Node):
 
 class CameraGyro(Node):
     def __init__(self, peripheral_state: PeripheralState):
-        super().__init__("gyro")
+        super().__init__('gyro')
 
         self.subscription = self.create_subscription(
             Imu,
-            "camera/gyro/sample",
+            'camera/gyro/sample',
             partial(realsense_gyro_callback, params=(peripheral_state)),
             QoSProfile(depth=10, reliability=ReliabilityPolicy.BEST_EFFORT),
         )
@@ -44,11 +44,11 @@ class CameraGyro(Node):
 
 class CameraAccel(Node):
     def __init__(self, peripheral_state: PeripheralState):
-        super().__init__("accel")
+        super().__init__('accel')
 
         self.subscription = self.create_subscription(
             Imu,
-            "camera/accel/sample",
+            'camera/accel/sample',
             partial(realsense_acc_callback, params=(peripheral_state)),
             QoSProfile(depth=10, reliability=ReliabilityPolicy.BEST_EFFORT),
         )
