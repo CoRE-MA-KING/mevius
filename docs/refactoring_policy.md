@@ -1,67 +1,67 @@
-# MEVIUS Refactoring Policy
+# MEVIUS リファクタリング方針
 
-This document outlines the policy for large-scale refactoring of the MEVIUS software codebase. The primary goals are to improve maintainability, extensibility, and reusability.
-
----
-
-## 1. Comprehensive Utilization of the ROS 2 Parameter System
-
-### Current Issues
-Currently, many parameters (e.g., motor IDs, control gains, model paths) are hard-coded within Python files, particularly in `mevius/mevius_utils/parameters/parameters.py`. This lacks flexibility, requiring code editing and rebuilding for any parameter changes.
-
-### Proposed Improvements
--   **Migrate to YAML:** Move hard-coded parameters to ROS 2's standard YAML file format.
--   **Dynamic Loading:** Refactor each ROS 2 node to dynamically load its parameters from the parameter server upon startup.
--   **Launch File Integration:** Enable loading of different parameter files from launch files, allowing for easy switching between configurations (e.g., "high-speed mode," "stability-focused mode").
-
-### Expected Benefits
--   **Separation of Code and Configuration:** Enables tuning of robot behavior without recompiling the code.
--   **Enhanced Flexibility:** Simplifies adaptation to different environments and experimental setups.
+このドキュメントは、MEVIUSソフトウェアコードベースの大規模リファクタリングに関する方針を概説します。主な目的は、保守性、拡張性、および再利用性を向上させることです。
 
 ---
 
-## 2. Establishment of a Comprehensive Test Suite
+## 1. ROS 2パラメータシステムの包括的な活用
 
-### Current Issues
-The `test` directory currently contains only static analysis tests (e.g., `flake8`), with no unit or integration tests to verify code logic. This makes it difficult to detect regressions during refactoring or feature additions.
+### 現状の問題点
+現在、多くのパラメータ（モーターID、制御ゲイン、モデルのパスなど）が、特に `mevius/mevius_utils/parameters/parameters.py` 内のPythonファイルにハードコードされています。これでは柔軟性に欠け、パラメータを変更するたびにコードを編集して再ビルドする必要があります。
 
-### Proposed Improvements
--   **Unit Testing:** Introduce `pytest` to create tests that verify the logic of individual classes and functions, especially for kinematics calculations and state transition logic.
--   **Integration Testing:** Implement the `launch_testing` framework to test the interaction between multiple nodes. This can validate scenarios such as "verifying that a walk command correctly generates motor command values."
--   **Continuous Integration (CI):** Set up a CI pipeline using tools like GitHub Actions to automatically run all tests whenever new code is pushed to the repository.
+### 改善案
+-   **YAMLへの移行:** ハードコードされたパラメータをROS 2の標準であるYAMLファイル形式に移行します。
+-   **動的読み込み:** 各ROS 2ノードが起動時にパラメータサーバーから自身のパラメータを動的に読み込むようにリファクタリングします。
+-   **Launchファイルとの統合:** Launchファイルから異なるパラメータファイルを読み込めるようにし、「高速移動モード」や「安定性重視モード」などの設定を簡単に切り替えられるようにします。
 
-### Expected Benefits
--   **Improved Code Quality and Reliability:** Significantly increases confidence in the software's correctness.
--   **Safer Development:** Provides a safety net against unintended side effects, enabling developers to make changes with greater confidence.
-
----
-
-## 3. Dependency Management and Transition to a Loosely Coupled Design
-
-### Current Issues
-The `main` function in `mevius_main.py` manually handles the instantiation and dependency injection of numerous nodes. This creates tight coupling between nodes, making it difficult to reuse or replace individual components.
-
-### Proposed Improvements
--   **Clarify Data Flow:** Transition from passing shared states like `RobotState` and `RobotCommand` as direct Python objects to communicating them via ROS 2 topics, services, or actions.
--   **Utilize ROS 2 Lifecycle Nodes:** Adopt ROS 2's standard lifecycle management for nodes to create a more robust and predictable startup and shutdown sequence.
--   **Separate Launch Responsibilities:** Move the logic for switching between simulation and real-world execution (currently `if args.sim:`) out of the `main` function and into dedicated launch files.
-
-### Expected Benefits
--   **Increased Node Independence:** Facilitates easier reuse and testing of individual nodes.
--   **Enhanced Debugging:** Allows for visual tracking of system data flow using tools like `rqt_graph`.
--   **Robust System Management:** Leads to a safer and clearer startup/shutdown process.
+### 期待される効果
+-   **コードと設定の分離:** コードを再コンパイルすることなく、ロボットの挙動を調整できるようになります。
+-   **柔軟性の向上:** さまざまな環境や実験設定への適応が容易になります。
 
 ---
 
-## 4. Documentation Enhancement and Automation
+## 2. 包括的なテストスイートの構築
 
-### Current Issues
-Many classes and functions lack docstrings, making it difficult to understand the code's intent and usage.
+### 現状の問題点
+`test`ディレクトリには現在、`flake8`などの静的解析テストしかなく、コードのロジックを検証する単体テストや結合テストが存在しません。これにより、リファクタリングや機能追加時に意図しないバグ（デグレード）が発生しても検知が困難です。
 
-### Proposed Improvements
--   **Complete Docstrings:** Add comprehensive docstrings to all public classes, methods, and functions, clearly describing their roles, arguments, and return values.
--   **Automated API Documentation:** Introduce `Sphinx` to automatically generate an API reference and other documentation from the docstrings.
+### 改善案
+-   **単体テスト:** `pytest`を導入し、個々のクラスや関数のロジックが正しく動作するかを検証するテストを作成します。特に、運動学の計算や状態遷移のロジックが対象です。
+-   **結合テスト:** `launch_testing`フレームワークを導入し、複数のノードが連携して正しく動作するかをテストします。「歩行開始コマンドが正しくモーターへの指令値を生成するか」などのシナリオを検証できます。
+-   **継続的インテグレーション (CI):** GitHub Actionsなどのツールを使用してCIパイプラインをセットアップし、新しいコードがリポジトリにプッシュされるたびにすべてのテストを自動的に実行します。
 
-### Expected Benefits
--   **Improved Readability and Maintainability:** Makes the codebase easier to understand and modify.
--   **Faster Onboarding:** Helps new developers get up to speed with the project more quickly.
+### 期待される効果
+-   **コード品質と信頼性の向上:** ソフトウェアの正しさに対する信頼性が大幅に向上します。
+-   **より安全な開発:** 意図しない副作用に対するセーフティネットを提供し、開発者がより安心して変更を行えるようになります。
+
+---
+
+## 3. 依存関係の管理と疎結合設計への移行
+
+### 現状の問題点
+`mevius_main.py`の`main`関数が、多数のノードのインスタンス化と依存性注入を手動で処理しています。これにより、ノード間の結合が密になり、個々のコンポーネントの再利用や交換が困難になっています。
+
+### 改善案
+-   **データフローの明確化:** `RobotState`や`RobotCommand`のような共有状態を直接Pythonオブジェクトとして渡すのではなく、ROS 2のトピック、サービス、またはアクションを介して通信するように変更します。
+-   **ROS 2ライフサイクルノードの活用:** ノードの状態管理をROS 2の標準的なライフサイクル管理に移行し、より堅牢で予測可能な起動およびシャットダウンシーケンスを作成します。
+-   **Launchファイルの責務分離:** シミュレーションと実世界の実行を切り替えるロジック（現在 `if args.sim:` にあるもの）を、`main`関数から専用のLaunchファイルに分離します。
+
+### 期待される効果
+-   **ノードの独立性の向上:** 個々のノードの再利用とテストが容易になります。
+-   **デバッグの強化:** `rqt_graph`などのツールを使用してシステムのデータフローを視覚的に追跡できるようになります。
+-   **堅牢なシステム管理:** より安全で明確な起動・シャットダウンプロセスにつながります。
+
+---
+
+## 4. ドキュメントの強化と自動化
+
+### 現状の問題点
+多くのクラスや関数でdocstringが不足しており、コードの意図や使用法を理解することが困難です。
+
+### 改善案
+-   **docstringの完成:** すべての公開クラス、メソッド、および関数に包括的なdocstringを追加し、その役割、引数、および戻り値を明確に記述します。
+-   **APIドキュメントの自動生成:** `Sphinx`を導入し、docstringからAPIリファレンスやその他のドキュメントを自動的に生成します。
+
+### 期待される効果
+-   **可読性と保守性の向上:** コードベースが理解しやすく、変更しやすくなります。
+-   **新規開発者のオンボーディングの迅速化:** 新しい開発者がプロジェクトに迅速に参加できるようになります。

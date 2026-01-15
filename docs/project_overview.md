@@ -1,54 +1,54 @@
-# Mevius Project Overview (ROS 2 Jazzy)
+# Mevius プロジェクト概要 (ROS 2 Jazzy)
 
-This document provides an overview of the MEVIUS quadruped robot project, including its hardware, software components, dependencies, and operational instructions. This project aims to create a quadruped robot that can be easily constructed using e-commerce components, sheet metal welding, and machining.
+このドキュメントは、四足歩行ロボットMEVIUSプロジェクトの概要を提供するもので、ハードウェア、ソフトウェアコンポーネント、依存関係、および操作手順が含まれています。このプロジェクトは、Eコマースで入手可能なコンポーネント、板金溶接、機械加工を用いて容易に製作できる四足歩行ロボットを創出することを目的としています。
 
-This document is specifically tailored for the **ROS 2 Jazzy** environment.
+このドキュメントは特に **ROS 2 Jazzy** 環境に合わせて調整されています。
 
-## 1. Project Links
+## 1. プロジェクト関連リンク
 
-*   [Project Page](https://haraduka.github.io/mevius-hardware)
+*   [プロジェクトページ](https://haraduka.github.io/mevius-hardware)
 *   [arXiv](https://arxiv.org/abs/2409.14721)
 *   [YouTube](https://www.youtube.com/watch?v=XXJ4EK3Y4zQ)
 
-## 2. Hardware Information
+## 2. ハードウェア情報
 
-All hardware components are detailed in the following Google Drive link:
-*   [Google Drive - Hardware Components](https://drive.google.com/drive/folders/18i6CWtUG8fkY0rCcbjN5WiUYItjIX0WM?usp=sharing)
+すべてのハードウェアコンポーネントの詳細は、以下のGoogle Driveリンクで確認できます。
+*   [Google Drive - ハードウェアコンポーネント](https://drive.google.com/drive/folders/18i6CWtUG8fkY0rCcbjN5WiUYItjIX0WM?usp=sharing)
 
-**Motor Configuration (T-Motor AK70-10):**
-*   Please download the upper computer installation program from [RUBIK LINK V2.0](https://store.tmotor.com/product/rubik-link-v2.html) and configure all motors to MIT mode.
-*   [AK70-10 Product Page](https://store.tmotor.com/product/ak70-10-dynamical-modular.html)
-*   [AK Serials Manual](https://store.tmotor.com/images/file/202208/251661393360838805.pdf)
+**モーター設定 (T-Motor AK70-10):**
+*   [RUBIK LINK V2.0](https://store.tmotor.com/product/rubik-link-v2.html) から上位コンピュータのインストールプログラムをダウンロードし、すべてのモーターをMITモードに設定してください。
+*   [AK70-10 製品ページ](https://store.tmotor.com/product/ak70-10-dynamical-modular.html)
+*   [AKシリーズマニュアル](https://store.tmotor.com/images/file/202208/251661393360838805.pdf)
 
-**Motor Order and Link/Joint Names:**
-*   Motor Order: FR(1-3) --> FL(4-6) --> BR(7-9) --> BL(10-12) / Proximal --> Distal
-*   Link Names: `*_scapula_link` --> `*_thigh_link` --> `*_calf_link`
-*   Joint Names: `*_collar` --> `*_hip` --> `*_knee`
+**モーターの順序とリンク/関節名:**
+*   モーター順序: FR(1-3) --> FL(4-6) --> BR(7-9) --> BL(10-12) / 根元側 --> 先端側
+*   リンク名: `*_scapula_link` --> `*_thigh_link` --> `*_calf_link`
+*   関節名: `*_collar` --> `*_hip` --> `*_knee`
 
-## 3. Software Dependencies
+## 3. ソフトウェア依存関係
 
-### 3.1 ROS 2 Jazzy Dependencies
+### 3.1 ROS 2 Jazzy 依存関係
 
-The project is built on ROS 2 Jazzy. Key ROS 2 packages and their roles are:
+このプロジェクトはROS 2 Jazzy上で構築されています。主要なROS 2パッケージとその役割は以下の通りです。
 
-*   **ament_cmake**: Core CMake build system for ROS 2 packages.
-*   **rosidl_default_generators**: Generates C, C++, and Python code from `.msg`, `.srv`, and `.action` files.
-*   **rosidl_default_runtime**: Provides runtime support for generated ROS IDL interfaces.
-*   **std_msgs**: Standard message definitions (e.g., `String`, `Int32`).
-*   **robot_state_publisher**: Publishes the robot's state to `tf2` based on URDF.
-*   **rviz**: 3D visualization tool for ROS 2.
-*   **joint_state_publisher_gui**: A GUI tool to manually publish joint states for URDF models.
-*   **gazebo_ros_pkgs**: Integration with Gazebo simulator (for ROS 2, typically Gazebo Garden/Ignition).
-*   **mevius_msgs**: Custom message package (inferred from `mevius_massage2` in `package.xml`).
+*   **ament_cmake**: ROS 2パッケージ用のコアCMakeビルドシステム。
+*   **rosidl_default_generators**: `.msg`, `.srv`, `.action`ファイルからC、C++、Pythonコードを生成。
+*   **rosidl_default_runtime**: 生成されたROS IDLインターフェースのランタイムサポートを提供。
+*   **std_msgs**: 標準的なメッセージ定義 (例: `String`, `Int32`)。
+*   **robot_state_publisher**: URDFに基づいてロボットの状態を`tf2`に発行。
+*   **rviz**: ROS 2用の3D可視化ツール。
+*   **joint_state_publisher_gui**: URDFモデルの関節状態を手動で発行するためのGUIツール。
+*   **gazebo_ros_pkgs**: Gazeboシミュレータとの連携 (ROS 2では通常Gazebo Garden/Ignition)。
+*   **mevius_msgs**: カスタムメッセージパッケージ (`package.xml`の`mevius_massage2`から推測)。
 
-Additional ROS-related dependencies:
+追加のROS関連依存関係:
 
-*   [urdfdom-py](https://github.com/ros/urdf_parser_py): Python bindings for URDF parsing.
-*   **realsense-ros**: For Intel RealSense cameras. **Note:** The `README.md` refers to a `ros1-legacy` branch. This needs to be updated to a ROS 2 compatible version or replaced with a ROS 2 native driver.
-*   **spacenav_node**: For SpaceNavigator devices. **Note:** The `README.md` refers to a ROS 1 package. A ROS 2 equivalent or alternative is required.
-*   **rqt_virtual_joystick**: A virtual joystick GUI. **Note:** The `README.md` refers to a ROS 1 package. A ROS 2 equivalent or alternative is required.
+*   [urdfdom-py](https://github.com/ros/urdf_parser_py): URDF解析用のPythonバインディング。
+*   **realsense-ros**: Intel RealSenseカメラ用。**注:** `README.md`では`ros1-legacy`ブランチが参照されています。これをROS 2互換バージョンに更新するか、ROS 2ネイティブドライバーに置き換える必要があります。
+*   **spacenav_node**: SpaceNavigatorデバイス用。**注:** `README.md`ではROS 1パッケージが参照されています。ROS 2での同等品または代替品が必要です。
+*   **rqt_virtual_joystick**: 仮想ジョイスティックGUI。**注:** `README.md`ではROS 1パッケージが参照されています。ROS 2での同等品または代替品が必要です。
 
-### 3.2 Python Package Dependencies
+### 3.2 Pythonパッケージ依存関係
 
 *   `bitstring`
 *   `pytorch`
@@ -56,17 +56,17 @@ Additional ROS-related dependencies:
 *   `mujoco`
 *   `mujoco-python-viewer`
 
-### 3.3 External Repositories / Libraries
+### 3.3 外部リポジトリ/ライブラリ
 
 *   [legged_gym](https://github.com/leggedrobotics/legged_gym)
-    *   Specific fork/branch `haraduka/mevius` is used for reinforcement learning.
-*   `mevius/tmotor_lib/tmotor_lib.py`: Originally from [mini-cheetah-tmotor-python-can](https://github.com/dfki-ric-underactuated-lab/mini-cheetah-tmotor-python-can)
-*   `mevius/mevius_utils/legged_gym_math/isaacgym_torch_utils/isaacgym_torch_utils.py`: Originally from [IsaacGym](https://developer.nvidia.com/isaac-gym)
-*   `mevius/mevius_utils/legged_gym_math/legged_gym_math.py`: Originally from [LeggedGym](https://github.com/leggedrobotics/legged_gym)
+    *   強化学習のために、特定のフォーク/ブランチ `haraduka/mevius` が使用されます。
+*   `mevius/tmotor_lib/tmotor_lib.py`: 元は [mini-cheetah-tmotor-python-can](https://github.com/dfki-ric-underactuated-lab/mini-cheetah-tmotor-python-can) から。
+*   `mevius/mevius_utils/legged_gym_math/isaacgym_torch_utils/isaacgym_torch_utils.py`: 元は [IsaacGym](https://developer.nvidia.com/isaac-gym) から。
+*   `mevius/mevius_utils/legged_gym_math/legged_gym_math.py`: 元は [LeggedGym](https://github.com/leggedrobotics/legged_gym) から。
 
-## 4. Build Instructions
+## 4. ビルド手順
 
-This project uses `ament_python` for its Python packages and `ament_cmake` for C++ components (if any).
+このプロジェクトは、Pythonパッケージに`ament_python`を、C++コンポーネント（もしあれば）に`ament_cmake`を使用します。
 
 ```bash
 mkdir -p ~/mevius_ws/src
@@ -77,83 +77,83 @@ colcon build --symlink-install
 source install/setup.bash
 ```
 
-## 5. Reinforcement Learning
+## 5. 強化学習
 
-The project includes reinforcement learning policies. The current policy is described as simple and not very stable, with improvements planned for upload.
+このプロジェクトには強化学習ポリシーが含まれています。現在のポリシーは単純でそれほど安定していないと説明されており、多くの改善が施された安定版が近々アップロードされる予定です。
 
-### Training Process (within `legged_gym` environment):
+### トレーニングプロセス (`legged_gym`環境内):
 
-1.  Add `haraduka/legged_gym` as a remote and checkout the `haraduka/mevius` branch.
-2.  **First Phase Training:**
+1.  `haraduka/legged_gym`をリモートとして追加し、`haraduka/mevius`ブランチをチェックアウトします。
+2.  **第一段階トレーニング:**
     ```bash
     python3 legged_gym/scripts/train.py --task mevius
     ```
-3.  **Second Phase Training:**
-    *   Modify parameters in `legged_gym/envs/mevius/mevius_config.py` from "first" to "second" (specifically `commands.ranges` and `domain_rand.friction_range`).
+3.  **第二段階トレーニング:**
+    *   `legged_gym/envs/mevius/mevius_config.py`内のパラメータを "first" から "second" に変更します（具体的には`commands.ranges`と`domain_rand.friction_range`）。
     ```bash
     python3 legged_gym/scripts/train.py --task mevius
     ```
-4.  **Playing the Policy:**
+4.  **ポリシーの実行:**
     ```bash
     python3 legged_gym/scripts/play.py --task mevius --load_run ( log_dir )
     ```
-5.  **Exporting Policy:**
+5.  **ポリシーのエクスポート:**
     ```bash
     cp logs/flat_mevius/( log_dir )/exported/policies/policy_1.pt ../mevius/models/policy.pt
     ```
 
-## 6. Usage Instructions
+## 6. 使用方法
 
-### 6.1 Basic Utility Test
+### 6.1 基本的なユーティリティテスト
 
 ```bash
 python3 scripts/mevius_utils.py
 ```
 
-### 6.2 Motor Test
+### 6.2 モーターテスト
 
-1.  CAN Interface Setup:
+1.  CANインターフェースのセットアップ:
     ```bash
     ./bin/can_setup.sh
     ```
-2.  Motor Control Test:
+2.  モーター制御テスト:
     ```bash
     python scripts/tmotor_test.py --ids 1 --task sense
     ```
 
-### 6.3 Real Robot Operation (ROS 2 Jazzy)
+### 6.3 実機操作 (ROS 2 Jazzy)
 
-*   **On MEVIUS PC:**
+*   **MEVIUS PC上で:**
     ```bash
-    # Start ROS 2 daemon if not already running
+    # ROS 2デーモンが実行されていない場合は起動
     ros2 daemon start 
-    # Launch RealSense camera (requires ROS 2 compatible realsense-ros package)
+    # RealSenseカメラを起動 (ROS 2互換のrealsense-rosパッケージが必要)
     ros2 launch realsense2_camera rs_t265.launch 
     ./bin/can_setup.sh
     python3 scripts/mevius_main.py
     ```
-*   **On Local PC:**
+*   **ローカルPC上で:**
     ```bash
-    # Launch SpaceNavigator node (requires ROS 2 compatible spacenav_node package)
+    # SpaceNavigatorノードを起動 (ROS 2互換のspacenav_nodeパッケージが必要)
     ros2 launch spacenav_node classic.launch
     ```
-    *   **Control:** Left Click: SITDOWN/STANDUP, Right Click: STANDUP/WALK
+    *   **操作:** 左クリック: SITDOWN/STANDUP, 右クリック: STANDUP/WALK
 
-### 6.4 Simulation
+### 6.4 シミュレーション
 
-*   **MuJoCo Simulation:**
+*   **MuJoCo シミュレーション:**
     ```bash
     python3 scripts/mevius_main.py --sim
     ```
-    *   Press 'D' to turn off every-step rendering in the MuJoCo viewer.
+    *   MuJoCoビューアで 'D'キーを押すと、毎ステップのレンダリングをオフにできます。
 
-## 7. Acknowledgements
+## 7. 謝辞
 
-*   `mevius/tmotor_lib/tmotor_lib.py`: Adapted from [mini-cheetah-tmotor-python-can](https://github.com/dfki-ric-underactuated-lab/mini-cheetah-tmotor-python-can)
-*   `mevius/mevius_utils/legged_gym_math/isaacgym_torch_utils/isaacgym_torch_utils.py`: Adapted from [IsaacGym](https://developer.nvidia.com/isaac-gym)
-*   `mevius/mevius_utils/legged_gym_math/legged_gym_math.py`: Adapted from [LeggedGym](https://github.com/leggedrobotics/legged_gym)
+*   `mevius/tmotor_lib/tmotor_lib.py`: [mini-cheetah-tmotor-python-can](https://github.com/dfki-ric-underactuated-lab/mini-cheetah-tmotor-python-can) を改変。
+*   `mevius/mevius_utils/legged_gym_math/isaacgym_torch_utils/isaacgym_torch_utils.py`: [IsaacGym](https://developer.nvidia.com/isaac-gym) を改変。
+*   `mevius/mevius_utils/legged_gym_math/legged_gym_math.py`: [LeggedGym](https://github.com/leggedrobotics/legged_gym) を改変。
 
-## 8. Citation
+## 8. 引用
 
 ```
 @inproceedings{kawaharazuka2024mevius,
