@@ -1,12 +1,11 @@
 import os
 import pprint
 
-import numpy as np
+from ament_index_python.packages import get_package_share_directory
 import torch
 import urdf_parser_py.urdf as urdf
-from ament_index_python.packages import get_package_share_directory
 
-from .legged_gym_math import quat_apply_yaw, torch_rand_sqrt_float, wrap_to_pi
+from .legged_gym_math import wrap_to_pi
 from .legged_gym_math.isaacgym_torch_utils import (
     get_axis_params,
     quat_apply,
@@ -28,7 +27,7 @@ class normalization:
 
 
 def get_urdf_joint_params(urdf_path, joint_names):
-    if isinstance(urdf_path, str) and urdf_path.endswith(".urdf"):
+    if isinstance(urdf_path, str) and urdf_path.endswith('.urdf'):
         robot_urdf = open(urdf_path).read()
 
     robot = urdf.Robot.from_xml_string(robot_urdf)
@@ -36,7 +35,7 @@ def get_urdf_joint_params(urdf_path, joint_names):
     joint_params = [None] * len(robot.joints)
 
     for joint in robot.joints:
-        if joint.type == "revolute" or joint.type == "continuous":
+        if joint.type == 'revolute' or joint.type == 'continuous':
             if joint.limit:
                 index = joint_names.index(joint.name)
                 joint_params[index] = (
@@ -51,22 +50,22 @@ def get_urdf_joint_params(urdf_path, joint_names):
 
 def test_get_urdf_joint_params():
     urdf_fullpath = os.path.join(
-        get_package_share_directory("mevius"), "models/mevius.urdf"
+        get_package_share_directory('mevius'), 'models/mevius.urdf'
     )
 
     joint_names = [
-        "BL_collar",
-        "BL_hip",
-        "BL_knee",
-        "BR_collar",
-        "BR_hip",
-        "BR_knee",
-        "FL_collar",
-        "FL_hip",
-        "FL_knee",
-        "FR_collar",
-        "FR_hip",
-        "FR_knee",
+        'BL_collar',
+        'BL_hip',
+        'BL_knee',
+        'BR_collar',
+        'BR_hip',
+        'BR_knee',
+        'FL_collar',
+        'FL_hip',
+        'FL_knee',
+        'FR_collar',
+        'FR_hip',
+        'FR_knee',
     ]
     pprint.pprint(get_urdf_joint_params(urdf_fullpath, joint_names))
 
@@ -79,7 +78,7 @@ def read_torch_policy(policy_path):
 
 def test_read_torch_policy():
     policy_path = os.path.join(
-        get_package_share_directory("mevius"), "models/policy.pt"
+        get_package_share_directory('mevius'), 'models/policy.pt'
     )
     policy = read_torch_policy(policy_path)
     input_data = torch.randn(1, 48)
@@ -130,7 +129,10 @@ def get_policy_observation(
     actions = torch.tensor(actions_, dtype=torch.float, requires_grad=False).reshape(
         1, -1
     )
-    # command_scale = torch.tensor([obs_scales.lin_vel, obs_scales.lin_vel, obs_scales.ang_vel], requires_grad=False)
+    # command_scale = torch.tensor(
+    #     [obs_scales.lin_vel, obs_scales.lin_vel, obs_scales.ang_vel],
+    #     requires_grad=False
+    # )
 
     # base_lin_vel = quat_rotate_inverse(base_quat, base_lin_vel)
     # base_ang_vel = quat_rotate_inverse(base_quat, base_ang_vel)
