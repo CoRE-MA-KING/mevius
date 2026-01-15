@@ -28,9 +28,7 @@ class MeviusCommand(Node):
         )
         self.subscription  # サブスクライバーを保持（破棄されないように）
 
-    def ros_command_callback(
-        self, msg: String, params: Tuple[RobotState, RobotCommand]
-    ):
+    def ros_command_callback(self, msg: String, params: Tuple[RobotState, RobotCommand]):
         robot_state, robot_command = params
         print('Received ROS Command: {}'.format(msg.data))
         command_callback(msg.data, robot_state, robot_command)

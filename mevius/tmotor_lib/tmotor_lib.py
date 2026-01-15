@@ -238,9 +238,7 @@ class CanMotorController:
 
         self.motorParams = AK80_6_V1p1_PARAMS  # default choice
         print('Using Motor Type: {}'.format(motor_type))
-        assert motor_type in legitimate_motors, (
-            'Motor Type not in list of accepted motors.'
-        )
+        assert motor_type in legitimate_motors, 'Motor Type not in list of accepted motors.'
         if motor_type == 'AK80_6_V1':
             self.motorParams = copy.deepcopy(AK80_6_V1_PARAMS)
         elif motor_type == 'AK80_6_V1p1':
@@ -283,15 +281,11 @@ class CanMotorController:
 
         # Initialize the command BitArrays for performance optimization
         self._p_des_BitArray = BitArray(
-            uint=float_to_uint(
-                0, self.motorParams['P_MIN'], self.motorParams['P_MAX'], 16
-            ),
+            uint=float_to_uint(0, self.motorParams['P_MIN'], self.motorParams['P_MAX'], 16),
             length=16,
         )
         self._v_des_BitArray = BitArray(
-            uint=float_to_uint(
-                0, self.motorParams['V_MIN'], self.motorParams['V_MAX'], 12
-            ),
+            uint=float_to_uint(0, self.motorParams['V_MIN'], self.motorParams['V_MAX'], 12),
             length=12,
         )
         self._kp_BitArray = BitArray(uint=0, length=12)
@@ -307,9 +301,7 @@ class CanMotorController:
         else:
             self.angle_range = [low, upper]
         assert len(self.angle_range) == 2, 'Invalid Angle Range Specified.'
-        assert self.angle_range[0] < self.angle_range[1], (
-            'Invalid Angle Range Specified.'
-        )
+        assert self.angle_range[0] < self.angle_range[1], 'Invalid Angle Range Specified.'
 
     def set_angle_offset(self, angle_offset, deg=True):
         """Set the angle offset [deg] for the motor."""
@@ -513,9 +505,7 @@ class CanMotorController:
         rawVelocity = float_to_uint(
             v_des_rad, self.motorParams['V_MIN'], self.motorParams['V_MAX'], 12
         )
-        rawTorque = float_to_uint(
-            tau_ff, self.motorParams['T_MIN'], self.motorParams['T_MAX'], 12
-        )
+        rawTorque = float_to_uint(tau_ff, self.motorParams['T_MIN'], self.motorParams['T_MAX'], 12)
 
         rawKp = (maxRawKp * kp) / self.motorParams['KP_MAX']
 
@@ -578,9 +568,7 @@ class CanMotorController:
         p_des_rad = math.radians(p_des_deg)
         v_des_rad = math.radians(v_des_deg)
 
-        pos_rad, vel_rad, cur, tem = self.send_rad_command(
-            p_des_rad, v_des_rad, kp, kd, tau_ff
-        )
+        pos_rad, vel_rad, cur, tem = self.send_rad_command(p_des_rad, v_des_rad, kp, kd, tau_ff)
         pos = math.degrees(pos_rad)
         vel = math.degrees(vel_rad)
         return pos, vel, cur, tem
@@ -611,13 +599,9 @@ class CanMotorController:
             p_des_rad = p_des_rad - self.angle_offset
 
         # Clip Position if outside Limits
-        p_des_rad = min(
-            max(self.motorParams['P_MIN'], p_des_rad), self.motorParams['P_MAX']
-        )
+        p_des_rad = min(max(self.motorParams['P_MIN'], p_des_rad), self.motorParams['P_MAX'])
         # Clip Velocity if outside Limits
-        v_des_rad = min(
-            max(self.motorParams['V_MIN'], v_des_rad), self.motorParams['V_MAX']
-        )
+        v_des_rad = min(max(self.motorParams['V_MIN'], v_des_rad), self.motorParams['V_MAX'])
         # Clip Kp if outside Limits
         kp = min(max(self.motorParams['KP_MIN'], kp), self.motorParams['KP_MAX'])
         # Clip Kd if outside Limits

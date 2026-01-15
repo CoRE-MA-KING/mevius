@@ -13,23 +13,17 @@ def setZeroPosition(motor):
     while abs(np.rad2deg(pos)) > 0.5:
         pos, vel, cur = motor.set_zero_position()
         print(
-            'Position: {}, Velocity: {}, Torque: {}'.format(
-                np.rad2deg(pos), np.rad2deg(vel), cur
-            )
+            'Position: {}, Velocity: {}, Torque: {}'.format(np.rad2deg(pos), np.rad2deg(vel), cur)
         )
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--device', '-d', type=str, default='can0', help='can interface name'
-    )
+    parser.add_argument('--device', '-d', type=str, default='can0', help='can interface name')
     parser.add_argument(
         '--ids', '-i', type=int, nargs='+', default=None, help='motor ids to control'
     )
-    parser.add_argument(
-        '--motor_type', type=str, default='AK70_10_V1p1', help='motor type'
-    )
+    parser.add_argument('--motor_type', type=str, default='AK70_10_V1p1', help='motor type')
     parser.add_argument(
         '--task',
         '-t',
@@ -37,15 +31,9 @@ def main():
         default='sense',
         help='[pos, sense, bilateral, real, mevius]',
     )
-    parser.add_argument(
-        '--value', '-v', type=int, default=None, help='value used for task'
-    )
-    parser.add_argument(
-        '--kp', type=float, default=3.0, help='p gain for position control'
-    )
-    parser.add_argument(
-        '--kd', type=float, default=1.0, help='d gain for position control'
-    )
+    parser.add_argument('--value', '-v', type=int, default=None, help='value used for task')
+    parser.add_argument('--kp', type=float, default=3.0, help='p gain for position control')
+    parser.add_argument('--kd', type=float, default=1.0, help='d gain for position control')
     parser.add_argument('--hz', type=int, default=1000, help='hz to control motor')
     parser.add_argument('--time', type=float, default=3.0, help='time to control [sec]')
     args = parser.parse_args()
@@ -97,9 +85,7 @@ def main():
     if args.task == 'pos':
         for deg in np.linspace(0.0, 360.0, int(args.time * args.hz / len(args.ids))):
             for motor_id, motor_controller in motors.items():
-                pos, vel, cur, tem = motor_controller.send_deg_command(
-                    deg, 0, args.kp, args.kd, 0
-                )
+                pos, vel, cur, tem = motor_controller.send_deg_command(deg, 0, args.kp, args.kd, 0)
                 print(
                     'Moving Motor {} Position: {}, Velocity: {}, Torque: {}, Temp: {}'.format(
                         motor_id, pos, vel, cur, tem
@@ -112,9 +98,7 @@ def main():
     elif args.task == 'sense':
         while not rospy.is_shutdown():
             for i, (motor_id, motor_controller) in enumerate(motors.items()):
-                pos, vel, cur, tem = motor_controller.send_deg_command(
-                    0, 0, 0.0, 0.0, 0
-                )
+                pos, vel, cur, tem = motor_controller.send_deg_command(0, 0, 0.0, 0.0, 0)
                 print(
                     'Moving Motor {} Position: {}, Velocity: {}, Torque: {}, Temp: {}'.format(
                         motor_id, pos, vel, cur, tem
@@ -144,9 +128,7 @@ def main():
                         4.0,
                     ),
                 )
-                pos, vel, cur, tem = motor_controller.send_deg_command(
-                    0, 0, 0.0, 0.0, command_cur
-                )
+                pos, vel, cur, tem = motor_controller.send_deg_command(0, 0, 0.0, 0.0, command_cur)
                 print(
                     'Moving Motor {} Position: {}, Velocity: {}, Torque: {}, Temp: {}'.format(
                         motor_id, pos, vel, cur, tem
@@ -292,11 +274,7 @@ def main():
     for motor_id, motor_controller in motors.items():
         pos, vel, cur, tem = motor_controller.disable_motor()
         time.sleep(0.2)
-        print(
-            'Motor {} Status: Pos: {}, Vel: {}, Torque: {}'.format(
-                motor_id, pos, vel, cur
-            )
-        )
+        print('Motor {} Status: Pos: {}, Vel: {}, Torque: {}'.format(motor_id, pos, vel, cur))
 
 
 if __name__ == '__main__':

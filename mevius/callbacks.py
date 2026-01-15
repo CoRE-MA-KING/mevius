@@ -9,9 +9,7 @@ from .mevius_utils.parameters import parameters as P
 from .types import ModeCommand, PeripheralState, RobotCommand, RobotState
 
 
-def command_callback(
-    command: ModeCommand, robot_state: RobotState, robot_command: RobotCommand
-):
+def command_callback(command: ModeCommand, robot_state: RobotState, robot_command: RobotCommand):
     print('command_callback')
     print([command, robot_state, robot_command])
     with robot_command.lock:
@@ -75,9 +73,7 @@ def command_callback(
         robot_command.command = 'WALK'
 
     with robot_command.lock:
-        print(
-            'Command changed from {} to {}'.format(prev_command, robot_command.command)
-        )
+        print('Command changed from {} to {}'.format(prev_command, robot_command.command))
 
 
 def realsense_vel_callback(msg: Odometry, params: PeripheralState):

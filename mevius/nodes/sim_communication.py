@@ -38,9 +38,7 @@ class SimCommunication(Node):
         self.declare_parameter('JOINT_NAME', [''])
         self.declare_parameter('STANDBY_ANGLE', [0.0] * 12)
 
-        self.joint_name = (
-            self.get_parameter('JOINT_NAME').get_parameter_value().string_array_value
-        )
+        self.joint_name = self.get_parameter('JOINT_NAME').get_parameter_value().string_array_value
         self.standby_angle = (
             self.get_parameter('STANDBY_ANGLE').get_parameter_value().double_array_value
         )
@@ -53,9 +51,7 @@ class SimCommunication(Node):
         mujoco.mj_resetDataKeyframe(self.model, self.data, 0)
         mujoco.mj_step(self.model, self.data)
 
-        self.mujoco_joint_names = [
-            self.model.joint(i).name for i in range(self.model.njnt)
-        ]
+        self.mujoco_joint_names = [self.model.joint(i).name for i in range(self.model.njnt)]
         with self.robot_state.lock:
             for i, name in enumerate(self.joint_name):
                 idx = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_ACTUATOR, name)
@@ -117,9 +113,7 @@ class SimCommunication(Node):
 
         for i, name in enumerate(self.joint_name):  # mevius
             if name in self.mujoco_joint_names:  # mujoco
-                idx = mujoco.mj_name2id(
-                    self.model, mujoco.mjtObj.mjOBJ_ACTUATOR, name
-                )  # mujoco
+                idx = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_ACTUATOR, name)  # mujoco
                 self.data.ctrl[idx] = ref_angle[i]
 
         mujoco.mj_step(self.model, self.data)
@@ -127,9 +121,7 @@ class SimCommunication(Node):
         with self.robot_state.lock:
             for i, name in enumerate(self.joint_name):
                 if name in self.mujoco_joint_names:
-                    idx = mujoco.mj_name2id(
-                        self.model, mujoco.mjtObj.mjOBJ_ACTUATOR, name
-                    )
+                    idx = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_ACTUATOR, name)
                     self.robot_state.angle[i] = self.data.qpos[7 + idx]
                     self.robot_state.velocity[i] = self.data.qvel[6 + idx]
                     self.robot_state.current[i] = 0.0
@@ -149,9 +141,7 @@ class SimCommunication(Node):
 
         odom_msg = Odometry()
         odom_msg.header.stamp = self.get_clock().now()
-        base_lin_vel_in_world = np.array(
-            [self.data.qvel[0], self.data.qvel[1], self.data.qvel[2]]
-        )
+        base_lin_vel_in_world = np.array([self.data.qvel[0], self.data.qvel[1], self.data.qvel[2]])
         # scipy quaternion: [x, y, z, w]
         base_quat_in_world = np.array(
             [self.data.qpos[4], self.data.qpos[5], self.data.qpos[6], self.data.qpos[3]]

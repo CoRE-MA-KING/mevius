@@ -49,9 +49,7 @@ def get_urdf_joint_params(urdf_path, joint_names):
 
 
 def test_get_urdf_joint_params():
-    urdf_fullpath = os.path.join(
-        get_package_share_directory('mevius'), 'models/mevius.urdf'
-    )
+    urdf_fullpath = os.path.join(get_package_share_directory('mevius'), 'models/mevius.urdf')
 
     joint_names = [
         'BL_collar',
@@ -77,9 +75,7 @@ def read_torch_policy(policy_path):
 
 
 def test_read_torch_policy():
-    policy_path = os.path.join(
-        get_package_share_directory('mevius'), 'models/policy.pt'
-    )
+    policy_path = os.path.join(get_package_share_directory('mevius'), 'models/policy.pt')
     policy = read_torch_policy(policy_path)
     input_data = torch.randn(1, 48)
 
@@ -102,33 +98,23 @@ def get_policy_observation(
     obs_scales = normalization.obs_scales
     default_dof_pos = torch.tensor(default_angle, dtype=torch.float32)
 
-    forward_vec = torch.tensor(
-        [1.0, 0.0, 0.0], dtype=torch.float, requires_grad=False
-    ).reshape(1, -1)
+    forward_vec = torch.tensor([1.0, 0.0, 0.0], dtype=torch.float, requires_grad=False).reshape(
+        1, -1
+    )
     gravity_vec = torch.tensor(
         get_axis_params(-1.0, 2), dtype=torch.float, requires_grad=False
     ).reshape(1, -1)
-    base_quat = torch.tensor(
-        base_quat_, dtype=torch.float, requires_grad=False
-    ).reshape(1, -1)
-    base_lin_vel = torch.tensor(
-        base_lin_vel_[:], dtype=torch.float, requires_grad=False
-    ).reshape(1, -1)
-    base_ang_vel = torch.tensor(
-        base_ang_vel_[:], dtype=torch.float, requires_grad=False
-    ).reshape(1, -1)
-    command = torch.tensor(command_, dtype=torch.float, requires_grad=False).reshape(
+    base_quat = torch.tensor(base_quat_, dtype=torch.float, requires_grad=False).reshape(1, -1)
+    base_lin_vel = torch.tensor(base_lin_vel_[:], dtype=torch.float, requires_grad=False).reshape(
         1, -1
     )
-    dof_pos = torch.tensor(dof_pos_, dtype=torch.float, requires_grad=False).reshape(
+    base_ang_vel = torch.tensor(base_ang_vel_[:], dtype=torch.float, requires_grad=False).reshape(
         1, -1
     )
-    dof_vel = torch.tensor(dof_vel_, dtype=torch.float, requires_grad=False).reshape(
-        1, -1
-    )
-    actions = torch.tensor(actions_, dtype=torch.float, requires_grad=False).reshape(
-        1, -1
-    )
+    command = torch.tensor(command_, dtype=torch.float, requires_grad=False).reshape(1, -1)
+    dof_pos = torch.tensor(dof_pos_, dtype=torch.float, requires_grad=False).reshape(1, -1)
+    dof_vel = torch.tensor(dof_vel_, dtype=torch.float, requires_grad=False).reshape(1, -1)
+    actions = torch.tensor(actions_, dtype=torch.float, requires_grad=False).reshape(1, -1)
     # command_scale = torch.tensor(
     #     [obs_scales.lin_vel, obs_scales.lin_vel, obs_scales.ang_vel],
     #     requires_grad=False

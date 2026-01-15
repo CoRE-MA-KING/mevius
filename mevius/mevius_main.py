@@ -16,7 +16,6 @@ from .types import PeripheralState, RobotCommand, RobotState
 
 
 def main():
-
     # print(sys.path)
 
     parser = argparse.ArgumentParser()
@@ -49,13 +48,9 @@ def main():
         camera_accel = CameraAccel(peripheral_state)
 
         if args.sim:
-            communication_thread = SimCommunication(
-                robot_state, robot_command, peripheral_state
-            )
+            communication_thread = SimCommunication(robot_state, robot_command, peripheral_state)
         else:
-            communication_thread = CanCommunication(
-                robot_state, robot_command, peripheral_state
-            )
+            communication_thread = CanCommunication(robot_state, robot_command, peripheral_state)
 
         executor = SingleThreadedExecutor()
         executor.add_node(communication_thread)

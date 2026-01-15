@@ -30,15 +30,9 @@ class CanCommunication(Node):
         self.declare_parameter('STANDBY_ANGLE', [0.0] * 12)
         self.declare_parameter('CAN_HZ', 50)
 
-        self.can_id = (
-            self.get_parameter('CAN_ID').get_parameter_value().integer_array_value
-        )
-        self.motor_dir = (
-            self.get_parameter('MOTOR_DIR').get_parameter_value().integer_array_value
-        )
-        self.joint_name = (
-            self.get_parameter('JOINT_NAME').get_parameter_value().string_array_value
-        )
+        self.can_id = self.get_parameter('CAN_ID').get_parameter_value().integer_array_value
+        self.motor_dir = self.get_parameter('MOTOR_DIR').get_parameter_value().integer_array_value
+        self.joint_name = self.get_parameter('JOINT_NAME').get_parameter_value().string_array_value
         self.standby_angle = (
             self.get_parameter('STANDBY_ANGLE').get_parameter_value().double_array_value
         )
@@ -62,8 +56,7 @@ class CanCommunication(Node):
             pos, vel, cur, tem = motor.enable_motor()
             print(
                 (
-                    'Enabling Motor {} [Status] Pos: {:.3f}, Vel: {:.3f}, '
-                    'Cur: {:.3f}, Temp: {:.3f}'
+                    'Enabling Motor {} [Status] Pos: {:.3f}, Vel: {:.3f}, Cur: {:.3f}, Temp: {:.3f}'
                 ).format(self.joint_name[i], pos, vel, cur, tem)
             )
             with self.robot_state.lock:

@@ -14,18 +14,12 @@ def setZeroPosition(motor):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--device', '-d', type=str, default='can0', help='can interface name'
-    )
+    parser.add_argument('--device', '-d', type=str, default='can0', help='can interface name')
     parser.add_argument(
         '--ids', '-i', type=int, nargs='+', default=None, help='motor ids to control'
     )
-    parser.add_argument(
-        '--kp', type=float, default=30.0, help='p gain for position control'
-    )
-    parser.add_argument(
-        '--kd', type=float, default=1.0, help='d gain for position control'
-    )
+    parser.add_argument('--kp', type=float, default=30.0, help='p gain for position control')
+    parser.add_argument('--kd', type=float, default=1.0, help='d gain for position control')
     args = parser.parse_args()
 
     print('# using Socket {} for can communication'.format(args.device))
@@ -65,9 +59,7 @@ def main():
     while True:
         for motor_id, motor_controller in motors.items():
             deg = 0
-            pos, vel, cur, tem = motor_controller.send_deg_command(
-                deg, 0, args.kp, args.kd, 0
-            )
+            pos, vel, cur, tem = motor_controller.send_deg_command(deg, 0, args.kp, args.kd, 0)
             print(deg)
             print(
                 'Moving Motor {} Position: {}, Velocity: {}, Torque: {}, Temp: {}'.format(
@@ -82,11 +74,7 @@ def main():
     for motor_id, motor_controller in motors.items():
         pos, vel, cur, tem = motor_controller.disable_motor()
         time.sleep(0.2)
-        print(
-            'Motor {} Status: Pos: {}, Vel: {}, Torque: {}'.format(
-                motor_id, pos, vel, cur
-            )
-        )
+        print('Motor {} Status: Pos: {}, Vel: {}, Torque: {}'.format(motor_id, pos, vel, cur))
 
 
 if __name__ == '__main__':

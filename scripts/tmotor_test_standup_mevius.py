@@ -30,23 +30,15 @@ def setZeroPosition(motor):
     while abs(np.rad2deg(pos)) > 0.5:
         pos, vel, cur, _ = motor.set_zero_position()
         print(
-            'Position: {}, Velocity: {}, Torque: {}'.format(
-                np.rad2deg(pos), np.rad2deg(vel), cur
-            )
+            'Position: {}, Velocity: {}, Torque: {}'.format(np.rad2deg(pos), np.rad2deg(vel), cur)
         )
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--device', '-d', type=str, default='can0', help='can interface name'
-    )
-    parser.add_argument(
-        '--kp', type=float, default=200.0, help='p gain for position control'
-    )
-    parser.add_argument(
-        '--kd', type=float, default=1.0, help='d gain for position control'
-    )
+    parser.add_argument('--device', '-d', type=str, default='can0', help='can interface name')
+    parser.add_argument('--kp', type=float, default=200.0, help='p gain for position control')
+    parser.add_argument('--kd', type=float, default=1.0, help='d gain for position control')
     args = parser.parse_args()
 
     print('# using Socket {} for can communication'.format(args.device))
@@ -89,9 +81,7 @@ def main():
             tgt_deg = start_angles_deg[motor_id - 1] + (
                 end_angles_deg[motor_id - 1] - start_angles_deg[motor_id - 1]
             ) * (cur_step / step_num)
-            pos, vel, cur, tem = motor_controller.send_deg_command(
-                tgt_deg, 0, args.kp, args.kd, 0
-            )
+            pos, vel, cur, tem = motor_controller.send_deg_command(tgt_deg, 0, args.kp, args.kd, 0)
             print(tgt_deg)
             print(
                 'Moving Motor {} Position: {}, Velocity: {}, Torque: {}, Temp: {}'.format(
@@ -133,9 +123,7 @@ def main():
                 * (cur_step / step_num)
                 + motor_offset_deg
             )
-            pos, vel, cur, tem = motor_controller.send_deg_command(
-                tgt_deg, 0, args.kp, args.kd, 0
-            )
+            pos, vel, cur, tem = motor_controller.send_deg_command(tgt_deg, 0, args.kp, args.kd, 0)
             print(tgt_deg)
             print(
                 'Moving Motor {} Position: {}, Velocity: {}, Torque: {}, Temp: {}'.format(

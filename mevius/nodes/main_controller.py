@@ -39,19 +39,13 @@ class MainController(Node):
             self.get_parameter('DEFAULT_ANGLE').get_parameter_value().double_array_value
         )
         self.action_scale = (
-            self.get_parameter('control.action_scale')
-            .get_parameter_value()
-            .double_value
+            self.get_parameter('control.action_scale').get_parameter_value().double_value
         )
         self.lin_vel_x_range = (
-            self.get_parameter('commands.ranges.lin_vel_x')
-            .get_parameter_value()
-            .double_array_value
+            self.get_parameter('commands.ranges.lin_vel_x').get_parameter_value().double_array_value
         )
         self.lin_vel_y_range = (
-            self.get_parameter('commands.ranges.lin_vel_y')
-            .get_parameter_value()
-            .double_array_value
+            self.get_parameter('commands.ranges.lin_vel_y').get_parameter_value().double_array_value
         )
         self.ang_vel_yaw_range = (
             self.get_parameter('commands.ranges.ang_vel_yaw')
@@ -59,14 +53,10 @@ class MainController(Node):
             .double_array_value
         )
         self.heading_range = (
-            self.get_parameter('commands.ranges.heading')
-            .get_parameter_value()
-            .double_array_value
+            self.get_parameter('commands.ranges.heading').get_parameter_value().double_array_value
         )
         self.heading_command = (
-            self.get_parameter('commands.heading_command')
-            .get_parameter_value()
-            .bool_value
+            self.get_parameter('commands.heading_command').get_parameter_value().bool_value
         )
 
         self.controlrate = 50.0
@@ -74,17 +64,11 @@ class MainController(Node):
         self.robot_state = robot_state
         self.robot_command = robot_command
         self.peripherals_state = peripherals_state
-        policy_path = os.path.join(
-            get_package_share_directory('mevius'), 'models/policy_slow.pt'
-        )
+        policy_path = os.path.join(get_package_share_directory('mevius'), 'models/policy_slow.pt')
         self.policy = read_torch_policy(policy_path).to('cpu')
 
-        urdf_fullpath = os.path.join(
-            get_package_share_directory('mevius'), 'models/mevius.urdf'
-        )
-        self.joint_params = get_urdf_joint_params(
-            urdf_fullpath, self.robot_command.joint_name
-        )
+        urdf_fullpath = os.path.join(get_package_share_directory('mevius'), 'models/mevius.urdf')
+        self.joint_params = get_urdf_joint_params(urdf_fullpath, self.robot_command.joint_name)
 
         self.is_safe = True
         self.last_actions = [0.0] * 12  # TODO initialize
@@ -97,16 +81,13 @@ class MainController(Node):
         if command in ['STANDBY', 'STANDUP', 'DEBUG']:
             with self.robot_command.lock:
                 self.robot_command.remaining_time -= 1.0 / self.controlrate
-                self.robot_command.remaining_time = max(
-                    0, self.robot_command.remaining_time
-                )
+                self.robot_command.remaining_time = max(0, self.robot_command.remaining_time)
                 if self.robot_command.remaining_time <= 0:
                     pass
                 else:
                     ratio = (
                         1
-                        - self.robot_command.remaining_time
-                        / self.robot_command.interpolating_time
+                        - self.robot_command.remaining_time / self.robot_command.interpolating_time
                     )
                     self.robot_command.angle = [
                         a + (b - a) * ratio
@@ -118,9 +99,7 @@ class MainController(Node):
         elif command in ['WALK']:
             with self.robot_command.lock:
                 self.robot_command.remaining_time -= 1.0 / self.controlrate
-                self.robot_command.remaining_time = max(
-                    0, self.robot_command.remaining_time
-                )
+                self.robot_command.remaining_time = max(0, self.robot_command.remaining_time)
 
             with self.peripherals_state.lock:
                 base_quat = self.peripherals_state.body_quat[:]

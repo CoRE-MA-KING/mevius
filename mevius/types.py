@@ -33,9 +33,7 @@ class PeripheralState:
         self.lock = threading.Lock()
 
 
-ModeCommand = Literal[
-    'STANDBY', 'STANDBY-STANDUP', 'STANDUP', 'STANDUP-WALK', 'WALK', 'DEBUG'
-]
+ModeCommand = Literal['STANDBY', 'STANDBY-STANDUP', 'STANDUP', 'STANDUP-WALK', 'WALK', 'DEBUG']
 
 
 class RobotCommand:
