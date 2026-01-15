@@ -14,7 +14,6 @@ from ..mevius_utils import (
     get_urdf_joint_params,
     read_torch_policy,
 )
-from ..mevius_utils.parameters import parameters as P
 from ..types import PeripheralState, RobotCommand, RobotState
 
 
@@ -25,8 +24,51 @@ class MainController(Node):
         robot_command: RobotCommand,
         peripherals_state: PeripheralState,
     ):
-        super().__init__("main_controller")
+        super().__init__("main_controller", parameter_overrides=[])
         print("Init main_controller Node")
+        self.declare_parameter("DEFAULT_ANGLE", [0.0] * 12)
+        self.declare_parameter("control.action_scale", 0.5)
+        self.declare_parameter("commands.ranges.lin_vel_x", [-0.65, 0.65])
+        self.declare_parameter("commands.ranges.lin_vel_y", [-0.4, 0.4])
+        self.declare_parameter("commands.ranges.ang_vel_yaw", [-0.7, 0.7])
+        self.declare_parameter("commands.ranges.heading", [-3.14, 3.14])
+        self.declare_parameter("commands.heading_command", False)
+
+        # Get parameters
+        self.default_angle = (
+            self.get_parameter("DEFAULT_ANGLE").get_parameter_value().double_array_value
+        )
+        self.action_scale = (
+            self.get_parameter("control.action_scale")
+            .get_parameter_value()
+            .double_value
+        )
+        self.lin_vel_x_range = (
+            self.get_parameter("commands.ranges.lin_vel_x")
+            .get_parameter_value()
+            .double_array_value
+        )
+        self.lin_vel_y_range = (
+            self.get_parameter("commands.ranges.lin_vel_y")
+            .get_parameter_value()
+            .double_array_value
+        )
+        self.ang_vel_yaw_range = (
+            self.get_parameter("commands.ranges.ang_vel_yaw")
+            .get_parameter_value()
+            .double_array_value
+        )
+        self.heading_range = (
+            self.get_parameter("commands.ranges.heading")
+            .get_parameter_value()
+            .double_array_value
+        )
+        self.heading_command = (
+            self.get_parameter("commands.heading_command")
+            .get_parameter_value()
+            .bool_value
+        )
+
         self.controlrate = 50.0
         self.timer = self.create_timer(1.0 / self.controlrate, self.timer_callback)
         self.robot_state = robot_state
@@ -40,7 +82,9 @@ class MainController(Node):
         urdf_fullpath = os.path.join(
             get_package_share_directory("mevius"), "models/mevius.urdf"
         )
-        self.joint_params = get_urdf_joint_params(urdf_fullpath, P.JOINT_NAME)
+        self.joint_params = get_urdf_joint_params(
+            urdf_fullpath, self.robot_command.joint_name
+        )
 
         self.is_safe = True
         self.last_actions = [0.0] * 12  # TODO initialize
@@ -83,12 +127,11 @@ class MainController(Node):
                 base_lin_vel = self.peripherals_state.body_vel[:]
                 base_ang_vel = self.peripherals_state.body_gyro[:]
 
-                ranges = P.commands.ranges
                 coefs = [
-                    ranges.lin_vel_x[1],
-                    ranges.lin_vel_y[1],
-                    ranges.ang_vel_yaw[1],
-                    ranges.heading[1],
+                    self.lin_vel_x_range[1],
+                    self.lin_vel_y_range[1],
+                    self.ang_vel_yaw_range[1],
+                    self.heading_range[1],
                 ]
                 if self.peripherals_state.spacenav_enable:
                     nav = self.peripherals_state.spacenav[:]
@@ -161,12 +204,14 @@ class MainController(Node):
                 dof_pos,
                 dof_vel,
                 self.last_actions,
+                self.default_angle,
+                self.heading_command,
             )
             actions = get_policy_output(self.policy, obs)
-            scaled_actions = P.control.action_scale * actions
+            scaled_actions = self.action_scale * actions
 
         if command in ["WALK"]:
-            ref_angle = [a + b for a, b in zip(scaled_actions, P.DEFAULT_ANGLE[:])]
+            ref_angle = [a + b for a, b in zip(scaled_actions, self.default_angle)]
             with self.robot_state.lock:
                 for i in range(len(ref_angle)):
                     if (
@@ -179,7 +224,8 @@ class MainController(Node):
                         )
                         print(
                             "# Joint {} out of range: {:.3f}".format(
-                                P.JOINT_NAME[i], self.robot_state.angle[i]
+                                self.robot_command.joint_name[i],
+                                self.robot_state.angle[i],
                             )
                         )
             with self.robot_command.lock:

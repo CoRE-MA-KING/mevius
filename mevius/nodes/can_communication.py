@@ -5,8 +5,6 @@ from mevius_massage.msg._mevius_log import MeviusLog
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
 
-from ..mevius_utils.parameters import parameters as P
-from ..tmotor_lib import CanMotorController
 from ..types import PeripheralState, RobotCommand, RobotState
 from .publisher import JointStatePub, MeviusLogPub
 
@@ -25,15 +23,35 @@ class CanCommunication(Node):
 
         print("Init can node")
 
+        self.declare_parameter("CAN_ID", [0] * 12)
+        self.declare_parameter("MOTOR_DIR", [0] * 12)
+        self.declare_parameter("JOINT_NAME", [""])
+        self.declare_parameter("STANDBY_ANGLE", [0.0] * 12)
+        self.declare_parameter("CAN_HZ", 50)
+
+        self.can_id = (
+            self.get_parameter("CAN_ID").get_parameter_value().integer_array_value
+        )
+        self.motor_dir = (
+            self.get_parameter("MOTOR_DIR").get_parameter_value().integer_array_value
+        )
+        self.joint_name = (
+            self.get_parameter("JOINT_NAME").get_parameter_value().string_array_value
+        )
+        self.standby_angle = (
+            self.get_parameter("STANDBY_ANGLE").get_parameter_value().double_array_value
+        )
+        self.can_hz = self.get_parameter("CAN_HZ").get_parameter_value().integer_value
+
         self.device = "can0"
         self.motor_type = "AK70_10_V1p1"
         self.n_motor = 12
         self.motors = [
             CanMotorController(
                 self.device,
-                P.CAN_ID[i],
+                self.can_id[i],
                 motor_type=self.motor_type,
-                motor_dir=P.MOTOR_DIR[i],
+                motor_dir=self.motor_dir[i],
             )
             for i in range(self.n_motor)
         ]
@@ -45,7 +63,7 @@ class CanCommunication(Node):
                 (
                     "Enabling Motor {} [Status] Pos: {:.3f}, Vel: {:.3f}, "
                     "Cur: {:.3f}, Temp: {:.3f}"
-                ).format(P.JOINT_NAME[i], pos, vel, cur, tem)
+                ).format(self.joint_name[i], pos, vel, cur, tem)
             )
             with self.robot_state.lock:
                 self.robot_state.angle[i] = pos
@@ -60,24 +78,24 @@ class CanCommunication(Node):
 
         print("Setting Initial Offset...")
         for i, motor in enumerate(self.motors):
-            motor.set_angle_offset(P.STANDBY_ANGLE[i], deg=False)
+            motor.set_angle_offset(self.standby_angle[i], deg=False)
             # motor.set_angle_range(joint_params[i][0], joint_params[i][1], deg=False)
 
         with self.robot_state.lock:
-            self.robot_state.angle = P.STANDBY_ANGLE[:]
+            self.robot_state.angle = self.standby_angle
 
         with self.robot_command.lock:
             self.robot_command.command = "STANDBY"
-            self.robot_command.angle = P.STANDBY_ANGLE[:]
-            self.robot_command.initial_angle = P.STANDBY_ANGLE[:]
-            self.robot_command.final_angle = P.STANDBY_ANGLE[:]
+            self.robot_command.angle = self.standby_angle
+            self.robot_command.initial_angle = self.standby_angle
+            self.robot_command.final_angle = self.standby_angle
             self.robot_command.interpolating_time = 3.0
             self.robot_command.remaining_time = self.robot_command.interpolating_time
             self.robot_command.initialized = True
 
         self.error_count = [0] * self.n_motor
 
-        self.timer = self.create_timer(1 / P.CAN_HZ, self.timer_callback)
+        self.timer = self.create_timer(1 / self.can_hz, self.timer_callback)
 
     def timer_callback(self):
         msg = MeviusLog()
@@ -106,7 +124,7 @@ class CanCommunication(Node):
                 self.error_count[i] += 1
                 print(
                     "# Can Reciver is Failed for {}, ({})".format(
-                        P.JOINT_NAME[i], self.error_count[i]
+                        self.joint_name[i], self.error_count[i]
                     )
                 )
                 print(e)
@@ -122,7 +140,7 @@ class CanCommunication(Node):
             self.robot_state.current = cur_list
             self.robot_state.temperature = tem_list
 
-        jointstate_msg.name = P.JOINT_NAME
+        jointstate_msg.name = self.joint_name
         jointstate_msg.position = pos_list
         jointstate_msg.velocity = vel_list
         jointstate_msg.effort = cur_list

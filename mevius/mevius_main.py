@@ -52,9 +52,16 @@ def main():
     try:
         mevius = Mevius()
 
+        # To get parameters, we need to spin the node.
+        rclpy.spin_once(mevius, timeout_sec=1.0)
+
         robot_state = RobotState()
         peripheral_state = PeripheralState()
-        robot_command = RobotCommand()
+        robot_command = RobotCommand(
+            joint_name=mevius.joint_names,
+            stiffness=mevius.stiffness,
+            damping=mevius.damping,
+        )
 
         main_controller = MainController(robot_state, robot_command, peripheral_state)
 

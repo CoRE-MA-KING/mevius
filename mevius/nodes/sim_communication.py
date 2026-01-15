@@ -19,7 +19,6 @@ from ..callbacks import (
     realsense_gyro_callback,
     realsense_vel_callback,
 )
-from ..mevius_utils.parameters import parameters as P
 from ..types import PeripheralState, RobotCommand, RobotState
 from .publisher import JointStatePub, MeviusLogPub
 
@@ -39,6 +38,16 @@ class SimCommunication(Node):
         print("Init sim node")
         # import tf
 
+        self.declare_parameter("JOINT_NAME", [""])
+        self.declare_parameter("STANDBY_ANGLE", [0.0] * 12)
+
+        self.joint_name = (
+            self.get_parameter("JOINT_NAME").get_parameter_value().string_array_value
+        )
+        self.standby_angle = (
+            self.get_parameter("STANDBY_ANGLE").get_parameter_value().double_array_value
+        )
+
         xml_path = os.path.abspath("src/mevius/models/scene.xml")
         self.model = mujoco.MjModel.from_xml_path(xml_path)
         self.data = mujoco.MjData(self.model)
@@ -51,16 +60,16 @@ class SimCommunication(Node):
             self.model.joint(i).name for i in range(self.model.njnt)
         ]
         with self.robot_state.lock:
-            for i, name in enumerate(P.JOINT_NAME):
+            for i, name in enumerate(self.joint_name):
                 idx = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_ACTUATOR, name)
                 self.robot_state.angle[i] = self.data.qpos[7 + idx]
                 self.robot_state.velocity[i] = self.data.qvel[6 + idx]
                 self.robot_state.current[i] = 0.0
                 self.robot_state.temperature[i] = 25.0
 
-        for i, name in enumerate(P.JOINT_NAME):
+        for i, name in enumerate(self.joint_name):
             idx = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_ACTUATOR, name)
-            self.data.ctrl[idx] = P.STANDBY_ANGLE[i]
+            self.data.ctrl[idx] = self.standby_angle[i]
 
         self.state_pub = MeviusLogPub()
         self.jointstate_pub = JointStatePub()
@@ -68,13 +77,13 @@ class SimCommunication(Node):
         # jointstate_pub = rospy.Publisher('joint_states', JointState, queue_size=2)
 
         with self.robot_state.lock:
-            self.robot_state.angle = P.STANDBY_ANGLE[:]
+            self.robot_state.angle = self.standby_angle
 
         with self.robot_command.lock:
             self.robot_command.command = "STANDBY"
-            self.robot_command.angle = P.STANDBY_ANGLE[:]
-            self.robot_command.initial_angle = P.STANDBY_ANGLE[:]
-            self.robot_command.final_angle = P.STANDBY_ANGLE[:]
+            self.robot_command.angle = self.standby_angle
+            self.robot_command.initial_angle = self.standby_angle
+            self.robot_command.final_angle = self.standby_angle
             self.robot_command.interpolating_time = 3.0
             self.robot_command.remaining_time = self.robot_command.interpolating_time
             self.robot_command.initialized = True
@@ -109,7 +118,7 @@ class SimCommunication(Node):
             ref_kd = self.robot_command.kd[:]
             ref_torque = self.robot_command.torque[:]
 
-        for i, name in enumerate(P.JOINT_NAME):  # mevius
+        for i, name in enumerate(self.joint_name):  # mevius
             if name in self.mujoco_joint_names:  # mujoco
                 idx = mujoco.mj_name2id(
                     self.model, mujoco.mjtObj.mjOBJ_ACTUATOR, name
@@ -119,7 +128,7 @@ class SimCommunication(Node):
         mujoco.mj_step(self.model, self.data)
 
         with self.robot_state.lock:
-            for i, name in enumerate(P.JOINT_NAME):
+            for i, name in enumerate(self.joint_name):
                 if name in self.mujoco_joint_names:
                     idx = mujoco.mj_name2id(
                         self.model, mujoco.mjtObj.mjOBJ_ACTUATOR, name
@@ -135,7 +144,7 @@ class SimCommunication(Node):
             msg.current = self.robot_state.current[:]
             msg.temperature = self.robot_state.temperature[:]
 
-        jointstate_msg.name = P.JOINT_NAME
+        jointstate_msg.name = self.joint_name
         jointstate_msg.position = msg.angle
         jointstate_msg.velocity = msg.velocity
         jointstate_msg.effort = msg.current

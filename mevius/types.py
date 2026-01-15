@@ -3,8 +3,6 @@
 import threading
 from typing import Literal
 
-from .mevius_utils.parameters import parameters as P
-
 
 class RobotState:
     """Represents the state of the robot."""
@@ -43,18 +41,18 @@ ModeCommand = Literal[
 class RobotCommand:
     """Represents a command to the robot."""
 
-    def __init__(self, n_motor=12):
+    def __init__(self, n_motor=12, joint_name=[], stiffness={}, damping={}):
         """Initializes the robot command."""
         self.angle = [0.0] * n_motor
         self.velocity = [0.0] * n_motor
         self.kp = []
         self.kd = []
         self.coef = 1.0
-        for name in P.JOINT_NAME:
-            for key in P.control.stiffness.keys():
+        for name in joint_name:
+            for key in stiffness.keys():
                 if key in name:
-                    self.kp.append(P.control.stiffness[key] * self.coef)
-                    self.kd.append(P.control.damping[key] * self.coef)
+                    self.kp.append(stiffness[key] * self.coef)
+                    self.kd.append(damping[key] * self.coef)
         assert len(self.kp) == n_motor
         assert len(self.kd) == n_motor
         self.torque = [0.0] * n_motor

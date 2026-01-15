@@ -1,23 +1,37 @@
 import argparse
-import sys
 import select
+import sys
 import time
+
 import numpy as np
 from tmotor_lib import CanMotorController
+
 
 def setZeroPosition(motor):
     pos, _, _ = motor.set_zero_position()
     while abs(np.rad2deg(pos)) > 0.5:
         pos, vel, cur = motor.set_zero_position()
-        print("Position: {}, Velocity: {}, Torque: {}".format(np.rad2deg(pos), np.rad2deg(vel), cur))
+        print(
+            "Position: {}, Velocity: {}, Torque: {}".format(
+                np.rad2deg(pos), np.rad2deg(vel), cur
+            )
+        )
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--device", '-d', type=str, default="can0", help="can interface name")
-    parser.add_argument("--ids", '-i', type=int, nargs="+", default=None, help="motor ids to control")
-    parser.add_argument("--kp", type=float, default=3.0, help="p gain for position control")
-    parser.add_argument("--kd", type=float, default=1.0, help="d gain for position control")
+    parser.add_argument(
+        "--device", "-d", type=str, default="can0", help="can interface name"
+    )
+    parser.add_argument(
+        "--ids", "-i", type=int, nargs="+", default=None, help="motor ids to control"
+    )
+    parser.add_argument(
+        "--kp", type=float, default=3.0, help="p gain for position control"
+    )
+    parser.add_argument(
+        "--kd", type=float, default=1.0, help="d gain for position control"
+    )
     args = parser.parse_args()
 
     print("# using Socket {} for can communication".format(args.device))
@@ -33,7 +47,11 @@ def main():
     print("Enabling Motors..")
     for motor_id, motor_controller in motors.items():
         pos, vel, cur, tem = motor_controller.enable_motor()
-        print("Motor {} Status: Pos: {}, Vel: {}, Torque: {}, Temp: {}".format(motor_id, pos, vel, cur, tem))
+        print(
+            "Motor {} Status: Pos: {}, Vel: {}, Torque: {}, Temp: {}".format(
+                motor_id, pos, vel, cur, tem
+            )
+        )
 
     time.sleep(1)
 
@@ -48,12 +66,18 @@ def main():
         vel_vec.append(vel)
         cur_vec.append(cur)
         tem_vec.append(tem)
-    
+
     for deg in np.linspace(0.0, 360.0, 36):
         for motor_id, motor_controller in motors.items():
-            pos, vel, cur, tem = motor_controller.send_deg_command(deg, 0, args.kp, args.kd, 0)
+            pos, vel, cur, tem = motor_controller.send_deg_command(
+                deg, 0, args.kp, args.kd, 0
+            )
             print(deg)
-            print("Moving Motor {} Position: {}, Velocity: {}, Torque: {}, Temp: {}".format(motor_id, pos, vel, cur, tem))
+            print(
+                "Moving Motor {} Position: {}, Velocity: {}, Torque: {}, Temp: {}".format(
+                    motor_id, pos, vel, cur, tem
+                )
+            )
             time.sleep(0.1)
 
     time.sleep(1)
@@ -62,7 +86,11 @@ def main():
     for motor_id, motor_controller in motors.items():
         pos, vel, cur, tem = motor_controller.disable_motor()
         time.sleep(0.2)
-        print("Motor {} Status: Pos: {}, Vel: {}, Torque: {}".format(motor_id, pos, vel, cur))
+        print(
+            "Motor {} Status: Pos: {}, Vel: {}, Torque: {}".format(
+                motor_id, pos, vel, cur
+            )
+        )
 
 
 if __name__ == "__main__":
