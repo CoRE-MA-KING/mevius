@@ -6,12 +6,10 @@ from rclpy.executors import SingleThreadedExecutor
 
 
 from .nodes.camera_subscriber import CameraAccel, CameraGyro, CameraOdom
-from .nodes.can_communication import CanCommunication
 from .nodes.keyboard_joy import KeyboardJoy
 from .nodes.main_controller import MainController
 from .nodes.mevius_command import MeviusCommand
 from .nodes.mevius_node import Mevius
-from .nodes.sim_communication import SimCommunication
 from .types import PeripheralState, RobotCommand, RobotState
 
 
@@ -45,10 +43,10 @@ def main():
         camera_gyro = CameraGyro(peripheral_state)
         camera_accel = CameraAccel(peripheral_state)
 
-        communication_thread = CanCommunication(robot_state, robot_command, peripheral_state)
+
 
         executor = SingleThreadedExecutor()
-        executor.add_node(communication_thread)
+
         executor.add_node(mevius)
         executor.add_node(mevius_command)
         executor.add_node(keyboard_joy)
