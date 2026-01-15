@@ -1,8 +1,8 @@
 from typing import Tuple
 
-import numpy as np
+
 import torch
-from torch import Tensor
+
 
 from .isaacgym_torch_utils import normalize, quat_apply
 
