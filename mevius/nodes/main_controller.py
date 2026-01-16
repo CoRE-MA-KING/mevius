@@ -5,8 +5,8 @@ import time
 
 from ament_index_python.packages import get_package_share_directory
 from rclpy.node import Node
-import torch
 from scipy.spatial.transform import Rotation
+import torch
 
 from ..mevius_utils import (
     get_policy_observation,
