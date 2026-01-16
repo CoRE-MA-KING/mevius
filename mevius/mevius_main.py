@@ -1,4 +1,3 @@
-import argparse
 import sys
 
 import rclpy
@@ -15,7 +14,6 @@ from .types import PeripheralState, RobotCommand, RobotState
 
 def main():
     # print(sys.path)
-
 
 
     print('Hello mevius!!')
@@ -42,7 +40,6 @@ def main():
         camera_odom = CameraOdom(peripheral_state)
         camera_gyro = CameraGyro(peripheral_state)
         camera_accel = CameraAccel(peripheral_state)
-
 
 
         executor = SingleThreadedExecutor()
