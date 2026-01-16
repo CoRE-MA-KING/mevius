@@ -322,7 +322,8 @@ class CanMotorController:
             print('Error: ', e)
 
     def _recv_can_frame(self):
-        """Receive a CAN frame and unpack it.
+        """
+        Receive a CAN frame and unpack it.
 
         Returns can_id, can_dlc (data length), data (in bytes)
         """
@@ -399,7 +400,8 @@ class CanMotorController:
             print('Error: ', e)
 
     def decode_motor_status(self, data_frame):
-        """Decode the motor status reply message into its constituent raw values.
+        """
+        Decode the motor status reply message into its constituent raw values.
 
         /// CAN Reply Packet Structure ///
         /// 16 bit position, between -4*pi and 4*pi
@@ -437,7 +439,8 @@ class CanMotorController:
     def convert_raw_to_physical_rad(
         self, positionRawValue, velocityRawValue, currentRawValue, temperatureRawValue
     ):
-        """Convert the raw values from the motor to physical values.
+        """
+        Convert the raw values from the motor to physical values.
 
         /// CAN Reply Packet Structure ///
         /// 16 bit position, between -4*pi and 4*pi
@@ -514,7 +517,8 @@ class CanMotorController:
         )
 
     def _send_raw_command(self, p_des, v_des, kp, kd, tau_ff):
-        """Package and send raw (uint) values of correct length to the motor.
+        """
+        Package and send raw (uint) values of correct length to the motor.
 
         _send_raw_command(desired position, desired velocity, position
         gain, velocity gain,                 feed-forward torque)
@@ -552,7 +556,8 @@ class CanMotorController:
             print('Error: ', e)
 
     def send_deg_command(self, p_des_deg, v_des_deg, kp, kd, tau_ff):
-        """Send data to motor in physical units.
+        """
+        Send data to motor in physical units.
 
         send_deg_command(position (deg), velocity (deg/s), kp, kd, Feedforward Torque (Nm))
         Sends data over CAN, reads response, and prints the current status in deg, deg/s, amps.
@@ -568,7 +573,8 @@ class CanMotorController:
         return pos, vel, cur, tem
 
     def send_rad_command(self, p_des_rad, v_des_rad, kp, kd, tau_ff):
-        """Send data to motor in physical units.
+        """
+        Send data to motor in physical units.
 
         send_rad_command(position (rad), velocity (rad/s), kp, kd, Feedforward Torque (Nm))
         Sends data over CAN, reads response, and prints the current status in rad, rad/s, amps.
@@ -626,7 +632,8 @@ class CanMotorController:
         T_MIN_NEW,
         T_MAX_NEW,
     ):
-        """Change the global motor constants.
+        """
+        Change the global motor constants.
 
         Default values are for AK80-6 motor from CubeMars. For a
         different motor, the min/max values can be changed here for
