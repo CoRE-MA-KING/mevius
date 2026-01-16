@@ -208,7 +208,8 @@ def waitOhneSleep(dt):
 
 
 class CanMotorController:
-    """Class for creating a Mini-Cheetah Motor Controller over CAN.
+    """
+    Class for creating a Mini-Cheetah Motor Controller over CAN.
 
     Uses SocketCAN driver for communication.
     """
@@ -230,7 +231,8 @@ class CanMotorController:
         motor_type='AK80_6_V1p1',
         socket_timeout=0.05,
     ):
-        """Instantiate the class with socket name, motor ID, and socket timeout.
+        """
+        Instantiate the class with socket name, motor ID, and socket timeout.
 
         Sets up the socket communication for rest of the functions.
         """
@@ -397,8 +399,7 @@ class CanMotorController:
             print('Error: ', e)
 
     def decode_motor_status(self, data_frame):
-        """Decode the motor status reply message into its constituent
-        raw values.
+        """Decode the motor status reply message into its constituent raw values.
 
         /// CAN Reply Packet Structure ///
         /// 16 bit position, between -4*pi and 4*pi
@@ -552,6 +553,7 @@ class CanMotorController:
 
     def send_deg_command(self, p_des_deg, v_des_deg, kp, kd, tau_ff):
         """Send data to motor in physical units.
+
         send_deg_command(position (deg), velocity (deg/s), kp, kd, Feedforward Torque (Nm))
         Sends data over CAN, reads response, and prints the current status in deg, deg/s, amps.
         If any input is outside limits, it is clipped. Only if torque is outside limits, a log
@@ -567,6 +569,7 @@ class CanMotorController:
 
     def send_rad_command(self, p_des_rad, v_des_rad, kp, kd, tau_ff):
         """Send data to motor in physical units.
+
         send_rad_command(position (rad), velocity (rad/s), kp, kd, Feedforward Torque (Nm))
         Sends data over CAN, reads response, and prints the current status in rad, rad/s, amps.
         If any input is outside limits, it is clipped. Only if torque is outside limits, a log
