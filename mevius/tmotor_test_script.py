@@ -209,9 +209,15 @@ def main():
         move_time = 5.0
         for deg_rate in np.linspace(0.0, 1.0, int(move_time * args.hz / len(args.ids))):
             for i, (motor_id, motor_controller) in enumerate(motors.items()):
+                command_val = initial_offset[motor_id - 1] + deg_rate * (
+                    final_angle[motor_id - 1] - initial_offset[motor_id - 1]
+                )
+                pos, vel, cur, tem = motor_controller.send_rad_command(
+                    command_val, 0, args.kp, args.kd, 0
+                )
                 print(
                     'Moving Motor {} Command: {}, Position: {}, Velocity: {}, Torque: {}, Temp: {}'.format(
-                        motor_id, command, pos, vel, cur, tem
+                        motor_id, command_val, pos, vel, cur, tem
                     )
                 )
             rate.sleep()
