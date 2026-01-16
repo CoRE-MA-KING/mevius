@@ -27,7 +27,9 @@ class MeviusCommand(Node):
         self.subscription = self.create_subscription(
             String,  # メッセージの型
             'mevius_command',  # トピック名
-            partial(self.ros_command_callback, params=(robot_state, robot_command)),
+            partial(
+                self.ros_command_callback, params=(robot_state, robot_command)
+            ),
             1,  # キューサイズ
         )
         self.subscription  # サブスクライバーを保持（破棄されないように）
