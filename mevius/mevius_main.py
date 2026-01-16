@@ -14,8 +14,6 @@ from .types import PeripheralState, RobotCommand, RobotState
 
 def main():
     # print(sys.path)
-
-
     print('Hello mevius!!')
     rclpy.init()
     try:
@@ -40,8 +38,6 @@ def main():
         camera_odom = CameraOdom(peripheral_state)
         camera_gyro = CameraGyro(peripheral_state)
         camera_accel = CameraAccel(peripheral_state)
-
-
         executor = SingleThreadedExecutor()
 
         executor.add_node(mevius)
