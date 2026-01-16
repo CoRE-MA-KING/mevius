@@ -30,9 +30,9 @@ def main():
 
     ids = args.ids
     motors = {}
-    for id in ids:
+    for motor_id_ in ids:
         motor_dir = 1
-        motors[id] = CanMotorController(args.device, id, 'AK70_10_V1p1')
+        motors[motor_id_] = CanMotorController(args.device, motor_id_, motor_dir, 'AK70_10_V1p1')
 
     print('Enabling Motors..')
     for motor_id, motor_controller in motors.items():
