@@ -26,3 +26,4 @@ def test_wrap_to_pi():
     torch.testing.assert_close(
         wrap_to_pi(torch.tensor(-torch.pi)),
         torch.tensor(torch.pi),
+    )  # Add test for -np.pi explicitly
