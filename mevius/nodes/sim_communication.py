@@ -2,10 +2,11 @@
 
 import os
 
+from builtin_interfaces.msg import Time
+from mevius_massage.msg._mevius_log import MeviusLog
 import mujoco
 import mujoco_viewer
 import numpy as np
-from builtin_interfaces.msg import Time
 from nav_msgs.msg import Odometry
 from rclpy.node import Node
 from scipy.spatial.transform import Rotation
@@ -16,8 +17,8 @@ from ..callbacks import (
     realsense_gyro_callback,
     realsense_vel_callback,
 )
-from ..types import PeripheralState, RobotCommand, RobotState
 from .publisher import JointStatePub, MeviusLogPub
+from ..types import PeripheralState, RobotCommand, RobotState
 
 
 class SimCommunication(Node):
@@ -194,6 +195,7 @@ class SimCommunication(Node):
 
 def main():
     import sys
+    import rclpy
     rclpy.init()
     try:
         # Create dummy instances for robot_state, robot_command, peripheral_state
@@ -201,7 +203,7 @@ def main():
         # For now, we need to pass some instances to SimCommunication's constructor
         from ..types import RobotState, RobotCommand, PeripheralState
         robot_state = RobotState()
-        robot_command = RobotCommand(joint_name=[], stiffness={}, damping={}) # Placeholder
+        robot_command = RobotCommand(joint_name=[], stiffness={}, damping={})  # Placeholder
         peripheral_state = PeripheralState()
 
         sim_node = SimCommunication(robot_state, robot_command, peripheral_state)
@@ -210,6 +212,7 @@ def main():
         sys.exit(1)
     finally:
         rclpy.try_shutdown()
+
 
 if __name__ == '__main__':
     main()
