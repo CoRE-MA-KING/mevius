@@ -230,8 +230,7 @@ class CanMotorController:
         motor_type='AK80_6_V1p1',
         socket_timeout=0.05,
     ):
-        """Instantiate the class with socket name, motor ID, and socket
-        timeout.
+        """Instantiate the class with socket name, motor ID, and socket timeout.
 
         Sets up the socket communication for rest of the functions.
         """
@@ -336,7 +335,7 @@ class CanMotorController:
             print('Error: ', e)
 
     def enable_motor(self):
-        """Sends the enable motor command to the motor."""
+        """Send the enable motor command to the motor."""
         try:
             # Bugfix: To remove the initial kick at motor start.
             # The current working theory is that the motor is not
@@ -359,7 +358,7 @@ class CanMotorController:
             print('Error: ', e)
 
     def disable_motor(self):
-        """Sends the disable motor command to the motor."""
+        """Send the disable motor command to the motor."""
         try:
             # Bugfix: To remove the initial kick at motor start.
             # The current working theory is that the motor "remembers" the last command. And this
@@ -383,7 +382,7 @@ class CanMotorController:
             print('Error: ', e)
 
     def set_zero_position(self):
-        """Sends command to set current position as Zero position."""
+        """Send command to set current position as Zero position."""
         try:
             self._send_can_frame(b'\xff\xff\xff\xff\xff\xff\xff\xfe')
             waitOhneSleep(set_zero_sleep)
@@ -399,8 +398,8 @@ class CanMotorController:
             print('Error: ', e)
 
     def decode_motor_status(self, data_frame):
-        """Function to decode the motor status reply message into its
-        constituent raw values.
+        """Decode the motor status reply message into its constituent
+        raw values.
 
         /// CAN Reply Packet Structure ///
         /// 16 bit position, between -4*pi and 4*pi
@@ -424,13 +423,11 @@ class CanMotorController:
 
         # Separate motor status values from the bit string.
         # Motor ID not considered necessary at the moment.
-        motor_id = dataBitArray[:8]
+        # motor_id = dataBitArray[:8]
         positionBitArray = dataBitArray[8:24]
         velocityBitArray = dataBitArray[24:36]
         currentBitArray = dataBitArray[36:48]
         temperatureBitArray = dataBitArray[48:56]
-
-        motor_id_ = int(motor_id, 2)
         positionRawValue = int(positionBitArray, 2)
         velocityRawValue = int(velocityBitArray, 2)
         currentRawValue = int(currentBitArray, 2)
@@ -441,8 +438,7 @@ class CanMotorController:
     def convert_raw_to_physical_rad(
         self, positionRawValue, velocityRawValue, currentRawValue, temperatureRawValue
     ):
-        """
-        Function to convert the raw values from the motor to physical values:
+        """Convert the raw values from the motor to physical values.
 
         /// CAN Reply Packet Structure ///
         /// 16 bit position, between -4*pi and 4*pi
@@ -558,8 +554,7 @@ class CanMotorController:
             print('Error: ', e)
 
     def send_deg_command(self, p_des_deg, v_des_deg, kp, kd, tau_ff):
-        """
-        Function to send data to motor in physical units:
+        """Send data to motor in physical units.
         send_deg_command(position (deg), velocity (deg/s), kp, kd, Feedforward Torque (Nm))
         Sends data over CAN, reads response, and prints the current status in deg, deg/s, amps.
         If any input is outside limits, it is clipped. Only if torque is outside limits, a log
@@ -574,8 +569,7 @@ class CanMotorController:
         return pos, vel, cur, tem
 
     def send_rad_command(self, p_des_rad, v_des_rad, kp, kd, tau_ff):
-        """
-        Function to send data to motor in physical units:
+        """Send data to motor in physical units.
         send_rad_command(position (rad), velocity (rad/s), kp, kd, Feedforward Torque (Nm))
         Sends data over CAN, reads response, and prints the current status in rad, rad/s, amps.
         If any input is outside limits, it is clipped. Only if torque is outside limits, a log
@@ -632,7 +626,7 @@ class CanMotorController:
         T_MIN_NEW,
         T_MAX_NEW,
     ):
-        """Function to change the global motor constants.
+        """Change the global motor constants.
 
         Default values are for AK80-6 motor from CubeMars. For a
         different motor, the min/max values can be changed here for
