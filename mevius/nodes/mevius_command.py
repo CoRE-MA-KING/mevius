@@ -13,8 +13,12 @@ from ..types import RobotCommand, RobotState
 class MeviusCommand(Node):
     def __init__(self, robot_state: RobotState, robot_command: RobotCommand):
         super().__init__('mevius_command')
-        # self.subscription=self.create_subscription(String, ros_command_callback, (robot_state, robot_command), queue_size=1))
-        # rospy.Subscriber('/mevius_command', String, ros_command_callback, (robot_state, robot_command), queue_size=1)
+        # self.subscription=self.create_subscription(
+        #     String, ros_command_callback, (robot_state, robot_command), queue_size=1
+        # )
+        # rospy.Subscriber(
+        #     '/mevius_command', String, ros_command_callback, (robot_state, robot_command), queue_size=1
+        # )
 
         self.robot_state = robot_state
         self.robot_command = robot_command
