@@ -3,8 +3,8 @@
 import os
 import time
 
-import torch
 from ament_index_python.packages import get_package_share_directory
+import torch
 from rclpy.node import Node
 from scipy.spatial.transform import Rotation
 
@@ -42,10 +42,14 @@ class MainController(Node):
             self.get_parameter('control.action_scale').get_parameter_value().double_value
         )
         self.lin_vel_x_range = (
-            self.get_parameter('commands.ranges.lin_vel_x').get_parameter_value().double_array_value
+            self.get_parameter('commands.ranges.lin_vel_x')
+            .get_parameter_value()
+            .double_array_value
         )
         self.lin_vel_y_range = (
-            self.get_parameter('commands.ranges.lin_vel_y').get_parameter_value().double_array_value
+            self.get_parameter('commands.ranges.lin_vel_y')
+            .get_parameter_value()
+            .double_array_value
         )
         self.ang_vel_yaw_range = (
             self.get_parameter('commands.ranges.ang_vel_yaw')
@@ -174,7 +178,9 @@ class MainController(Node):
             with self.robot_state.lock:
                 dof_pos = self.robot_state.angle[:]
                 dof_vel = self.robot_state.velocity[:]
-            # print(base_quat, base_lin_vel, base_ang_vel, commands, dof_pos, dof_vel, last_actions)
+            # print(
+            #     base_quat, base_lin_vel, base_ang_vel, commands, dof_pos, dof_vel, last_actions
+            # )
             obs = get_policy_observation(
                 base_quat,
                 base_lin_vel,
