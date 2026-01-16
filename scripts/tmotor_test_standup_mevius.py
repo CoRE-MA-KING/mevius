@@ -47,11 +47,11 @@ def main():
     # ids = [1,2,3]
     ids = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     motors = {}
-    for id in ids:
+    for motor_id in ids:
         motor_dir = 1
-        if id in [1, 4, 5, 6, 11, 12]:
+        if motor_id in [1, 4, 5, 6, 11, 12]:
             motor_dir = -1
-        motors[id] = CanMotorController(args.device, id, motor_dir, 'AK70_10_V1p1')
+        motors[motor_id] = CanMotorController(args.device, motor_id, motor_dir, 'AK70_10_V1p1')
 
     print('Enabling Motors..')
     for motor_id, motor_controller in motors.items():
