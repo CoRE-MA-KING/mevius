@@ -234,7 +234,6 @@ class CanMotorController:
 
         Sets up the socket communication for rest of the functions.
         """
-
         self.motorParams = AK80_6_V1p1_PARAMS  # default choice
         print('Using Motor Type: {}'.format(motor_type))
         assert motor_type in legitimate_motors, 'Motor Type not in list of accepted motors.'
@@ -415,7 +414,6 @@ class CanMotorController:
 
         returns: the following raw values as (u)int: motorid, position, velocity, current, temperature
         """
-
         # Convert the message from motor to a bit string as this is easier to deal with than hex
         # while seperating individual values.
         self._recv_bytes.bytes = data_frame
@@ -454,7 +452,6 @@ class CanMotorController:
 
         returns: position (radians), velocity (rad/s), current (amps)
         """
-
         physicalPositionRad = uint_to_float(
             positionRawValue, self.motorParams['P_MIN'], self.motorParams['P_MAX'], 16
         )
