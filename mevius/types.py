@@ -8,7 +8,7 @@ class RobotState:
     """Represents the state of the robot."""
 
     def __init__(self, n_motor=12):
-        """Initializes the robot state."""
+        """Initialize the robot state."""
         self.angle = [0.0] * n_motor
         self.velocity = [0.0] * n_motor
         self.current = [0.0] * n_motor
@@ -20,7 +20,7 @@ class PeripheralState:
     """Represents the state of the robot's peripherals."""
 
     def __init__(self):
-        """Initializes the peripheral state."""
+        """Initialize the peripheral state."""
         self.realsense_last_time = None
         self.body_vel = [0.0] * 3
         self.body_quat = [0.0] * 4
@@ -40,7 +40,7 @@ class RobotCommand:
     """Represents a command to the robot."""
 
     def __init__(self, n_motor=12, joint_name=[], stiffness={}, damping={}):
-        """Initializes the robot command."""
+        """Initialize the robot command."""
         self.angle = [0.0] * n_motor
         self.velocity = [0.0] * n_motor
         self.kp = []
