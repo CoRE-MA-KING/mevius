@@ -9,7 +9,9 @@ def setZeroPosition(motor):
     # motor.set_zero_position()
     # while abs(np.rad2deg(pos)) > 0.5:
     #     pos, vel, cur = motor.set_zero_position()
-    #     print("Position: {}, Velocity: {}, Torque: {}".format(np.rad2deg(pos), np.rad2deg(vel), cur))
+    #     print(
+    #         "Position: {}, Velocity: {}, Torque: {}".format(np.rad2deg(pos), np.rad2deg(vel), cur)
+    #     )
 
 
 def main():
@@ -28,9 +30,9 @@ def main():
 
     ids = args.ids
     motors = {}
-    for id in ids:
+    for motor_id_ in ids:
         motor_dir = 1
-        motors[id] = CanMotorController(args.device, id, motor_dir, 'AK70_10_V1p1')
+        motors[motor_id_] = CanMotorController(args.device, id, motor_dir, 'AK70_10_V1p1')
 
     print('Enabling Motors..')
     for motor_id, motor_controller in motors.items():
