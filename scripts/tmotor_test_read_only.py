@@ -10,7 +10,9 @@ def setZeroPosition(motor):
     # while abs(np.rad2deg(pos)) > 0.5:
     #     pos, vel, cur = motor.set_zero_position()
     #     print(
-    #         "Position: {}, Velocity: {}, Torque: {}".format(np.rad2deg(pos), np.rad2deg(vel), cur)
+    #         "Position: {}, Velocity: {}, Torque: {}".format(
+    #             np.rad2deg(pos), np.rad2deg(vel), cur
+    #         )
     #     )
 
 
