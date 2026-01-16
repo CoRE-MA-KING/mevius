@@ -4,16 +4,16 @@ import time
 from tmotor_lib import CanMotorController
 
 
+import numpy as np
+
 def setZeroPosition(motor):
     pos, _, _, _ = motor.set_zero_position()
     # motor.set_zero_position()
     # while abs(np.rad2deg(pos)) > 0.5:
     #     pos, vel, cur = motor.set_zero_position()
-    #     print(
-    #         "Position: {}, Velocity: {}, Torque: {}".format(
-    #             np.rad2deg(pos), np.rad2deg(vel), cur
-    #         )
-    #     )
+    #     print('Position: {}, Velocity: {}, Torque: {}'.format(
+    #         np.rad2deg(pos), np.rad2deg(vel), cur
+    #     ))
 
 
 def main():
