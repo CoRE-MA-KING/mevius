@@ -6,8 +6,8 @@ from rclpy.node import Node
 from sensor_msgs.msg import JointState
 
 from .publisher import JointStatePub, MeviusLogPub
-from ..types import PeripheralState, RobotCommand, RobotState
 from ..tmotor_lib import CanMotorController
+from ..types import PeripheralState, RobotCommand, RobotState
 
 
 class CanCommunication(Node):
@@ -56,7 +56,8 @@ class CanCommunication(Node):
             pos, vel, cur, tem = motor.enable_motor()
             print(
                 (
-                    'Enabling Motor {} [Status] Pos: {:.3f}, Vel: {:.3f}, Cur: {:.3f}, Temp: {:.3f}'
+                    'Enabling Motor {} [Status] Pos: {:.3f}, Vel: {:.3f}, '
+                    'Cur: {:.3f}, Temp: {:.3f}'
                 ).format(self.joint_name[i], pos, vel, cur, tem)
             )
             with self.robot_state.lock:
@@ -162,6 +163,7 @@ class CanCommunication(Node):
 
 def main():
     import sys
+    import rclpy
     rclpy.init()
     try:
         # Create dummy instances for robot_state, robot_command, peripheral_state
@@ -169,7 +171,7 @@ def main():
         # For now, we need to pass some instances to CanCommunication's constructor
         from ..types import RobotState, RobotCommand, PeripheralState
         robot_state = RobotState()
-        robot_command = RobotCommand(joint_name=[], stiffness={}, damping={}) # Placeholder
+        robot_command = RobotCommand(joint_name=[], stiffness={}, damping={})  # Placeholder
         peripheral_state = PeripheralState()
 
         can_node = CanCommunication(robot_state, robot_command, peripheral_state)
@@ -178,6 +180,7 @@ def main():
         sys.exit(1)
     finally:
         rclpy.try_shutdown()
+
 
 if __name__ == '__main__':
     main()
